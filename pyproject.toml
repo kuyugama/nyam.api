@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "nyamga"
+version = "0.1.0"
+description = ""
+authors = ["kuyugama <mail.kuyugama@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.0"
+sqlalchemy = "^2.0.35"
+asyncpg = "^0.29.0"
+alembic = "^1.13.3"
+pytest = "^8.3.3"
+pillow = "^10.4.0"
+bcrypt = "^4.2.0"
+dynaconf = "^3.2.6"
+pydantic = {extras = ["email"], version = "^2.9.2"}
+celery = {extras = ["redis"], version = "^5.4.0"}
+aioboto3 = "^13.1.1"
+psycopg2-binary = "^2.9.9"
+pytest-postgresql = "^6.1.1"
+async-asgi-testclient = "^1.4.11"
+pytest-asyncio = "^0.21.1"
+puremagic = "^1.28"
+python-multipart = "^0.0.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+python_functions = "test_*"
+python_files = "test_*.py"
+asyncio_mode = "auto"
+
+
