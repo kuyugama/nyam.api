@@ -29,14 +29,16 @@ password_incorrect = define_error("password-incorrect", "Password incorrect", 40
 
 
 def client_details(request: Request) -> ClientInfo:
+    agent = request.headers.get("User-Agent", None)
+
     if request.client:
-        return ClientInfo(request.client.host)
+        return ClientInfo(request.client.host, agent)
 
     if "x-forwarder-for" in request.headers:
-        return ClientInfo(request.headers["x-forwarder-for"])
+        return ClientInfo(request.headers["x-forwarder-for"], agent)
 
     if "x-real-ip" in request.headers:
-        return ClientInfo(request.headers["x-real-ip"])
+        return ClientInfo(request.headers["x-real-ip"], agent)
 
 
 @has_errors(email_occupied, nickname_occupied, default_role_not_exist)

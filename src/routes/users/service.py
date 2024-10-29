@@ -1,5 +1,5 @@
-import mimetypes
 import secrets
+import mimetypes
 
 from PIL import Image
 from fastapi import UploadFile
@@ -12,10 +12,10 @@ from src.models import User, UploadImage, Role
 from .scheme import UpdateUserBody, UpdateOtherUserBody
 
 from src.util import (
-    filter_image_size,
-    upload_file_obj,
-    compress_png,
     delete_obj,
+    compress_png,
+    upload_file_obj,
+    filter_image_size,
 )
 
 
@@ -23,8 +23,12 @@ async def update_user(
     session: AsyncSession,
     user: User,
     body: UpdateUserBody | UpdateOtherUserBody,
+    updated_by: User | None = None,
 ) -> User:
+    from tasks import user_nickname_updated
+
     if body.nickname is not None:
+        user_nickname_updated.send(user.id, user.nickname, body.nickname, updated_by and updated_by.id)
         user.nickname = body.nickname
 
     if body.pseudonym is not None:
@@ -43,6 +47,7 @@ async def update_user(
         avatar = user.avatar
         user.avatar = None
         await util.delete_obj(avatar.key)
+        await session.delete(avatar)
 
     if isinstance(body, UpdateOtherUserBody) and body.permissions:
         if body.merge_permissions:

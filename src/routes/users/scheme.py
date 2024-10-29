@@ -18,7 +18,10 @@ class UpdateUserBody(SchemeModel):
     remove_description: bool = Field(False, description="Whether to remove description")
 
     @field_validator("nickname")
-    def validate_nickname(cls, v: str):
+    def validate_nickname(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+
         assert len(v) > 5, "Nickname length cannot be less than 5 characters"
 
         assert consists_of(

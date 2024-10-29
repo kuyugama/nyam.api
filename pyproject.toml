@@ -25,6 +25,8 @@ async-asgi-testclient = "^1.4.11"
 pytest-asyncio = "^0.21.1"
 puremagic = "^1.28"
 python-multipart = "^0.0.12"
+dramatiq = {extras = ["watch"], version = "^1.17.1"}
+ua-parser = "^0.18.0"
 
 
 [build-system]

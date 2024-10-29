@@ -45,7 +45,7 @@ async def signin(
     client: ClientInfo = Depends(client_details),
 ):
     if client:
-        new_login.delay(user.id, client.host)
+        new_login.send(user.id, client.host, client.agent)
 
     return await service.create_token(session, user)
 
