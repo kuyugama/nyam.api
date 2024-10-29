@@ -39,3 +39,4 @@ SignInBody = SignInEmailBody | SignInNicknameBody
 @dataclass
 class ClientInfo:
     host: str
+    agent: str

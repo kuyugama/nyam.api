@@ -7,7 +7,7 @@ from src.routes.users import service
 from src.models import Token, User, Role
 from src.database import acquire_session
 from .scheme import UpdateUserBody, UpdateOtherUserBody
-from src.dependencies import require_token, require_permissions
+from src.dependencies import require_token, require_permissions, optional_token
 
 from .dependencies import (
     file_mime,
@@ -43,7 +43,7 @@ async def update_me(
     token: Token = Depends(require_token),
     session: AsyncSession = Depends(acquire_session),
 ):
-    return await service.update_user(session, token.owner, body)
+    return await service.update_user(session, token.owner, body, token.owner)
 
 
 @router.post(
@@ -102,9 +102,10 @@ async def update_user_role(
 async def update_user_info(
     body: UpdateOtherUserBody = Depends(validate_update_other_user),
     user: User = Depends(validate_user),
+    token: Token | None = Depends(optional_token),
     session: AsyncSession = Depends(acquire_session),
 ):
-    return await service.update_user(session, user, body)
+    return await service.update_user(session, user, body, token and token.owner)
 
 
 @router.post(
