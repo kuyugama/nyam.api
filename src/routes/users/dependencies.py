@@ -2,14 +2,14 @@ import puremagic
 from fastapi import Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Token
 from src.scheme import APIError
 from src.util import has_errors
+from src.models import Token, User
 from src.database import acquire_session
 from src import constants, scheme, permissions
 from src.service import get_role_by_name, get_user_by_nickname
-from src.dependencies import require_token, require_permissions, master_grant
 from src.routes.users.scheme import UpdateUserBody, UpdateOtherUserBody
+from src.dependencies import require_token, require_permissions, master_grant, optional_token
 
 MB = 1024 * 1024
 
@@ -49,8 +49,13 @@ avatar_too_big = define_error(
 @has_errors(empty_update, nothing_to_update)
 async def validate_update_user(
     body: UpdateUserBody,
-    token: Token = Depends(require_token),
+    token: Token | User = Depends(require_token),
 ):
+    if isinstance(token, User):
+        user = token
+    else:
+        user = token.owner
+
     if not (
         body.nickname
         or body.pseudonym
@@ -63,43 +68,17 @@ async def validate_update_user(
     ):
         raise empty_update
 
-    if body.remove_pseudonym and token.owner.pseudonym is None:
+    if body.remove_pseudonym and user.pseudonym is None:
         body.remove_pseudonym = False
 
-    if body.remove_description and token.owner.description is None:
+    if body.remove_description and user.description is None:
         body.remove_description = False
 
     if (
-        (body.nickname is None or body.nickname == token.owner.nickname)
-        and (body.pseudonym == token.owner.pseudonym and not body.remove_pseudonym)
-        and (body.description == token.owner.description and not body.remove_description)
+        (body.nickname is None or body.nickname == user.nickname)
+        and (body.pseudonym == user.pseudonym and not body.remove_pseudonym)
+        and (body.description == user.description and not body.remove_description)
     ):
-        raise nothing_to_update
-
-    return body
-
-
-@has_errors(empty_update, nothing_to_update)
-async def validate_update_other_user(
-    body: UpdateOtherUserBody,
-    token: Token = Depends(require_token),
-    master_granted: bool = Depends(master_grant),
-):
-    permission_validator = require_permissions(permissions.user.permission_management).dependency
-
-    body.permissions is not None and permission_validator(master_granted, token)
-
-    try:
-        await validate_update_user(body, token)
-    except APIError as e:
-        if e.code not in (nothing_to_update.code, empty_update.code):
-            raise
-
-        # If permissions are empty - re-raise
-        if body.permissions is None:
-            raise
-
-    if body.permissions == token.owner.local_permissions:
         raise nothing_to_update
 
     return body
@@ -139,3 +118,30 @@ async def validate_user(nickname: str, session: AsyncSession = Depends(acquire_s
         raise user_not_found
 
     return user
+
+
+@has_errors(empty_update, nothing_to_update)
+async def validate_update_other_user(
+    body: UpdateOtherUserBody,
+    user: User = Depends(validate_user),
+    token: Token = Depends(optional_token),
+    master_granted: bool = Depends(master_grant),
+):
+    permission_validator = require_permissions(permissions.user.permission_management).dependency
+
+    body.permissions is not None and permission_validator(master_granted, token)
+
+    try:
+        await validate_update_user(body, user)
+    except APIError as e:
+        if e.code not in (nothing_to_update.code, empty_update.code):
+            raise
+
+        # If permissions are empty - re-raise
+        if body.permissions is None:
+            raise
+
+    if body.permissions == user.local_permissions:
+        raise nothing_to_update
+
+    return body
