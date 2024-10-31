@@ -3,8 +3,8 @@ from async_asgi_testclient import TestClient
 from tests import requests
 
 
-async def test_normal_email(client: TestClient, user_regular, user_password):
-    response = await requests.auth.signin(client, user_regular.email, None, user_password)
+async def test_normal_email(client: TestClient, user_regular, password_user):
+    response = await requests.auth.signin(client, user_regular.email, None, password_user)
     print(response.json())
     assert response.status_code == 200
 
@@ -13,8 +13,8 @@ async def test_normal_email(client: TestClient, user_regular, user_password):
     assert response.json().get("used_at") is None
 
 
-async def test_normal_nickname(client: TestClient, user_regular, user_password):
-    response = await requests.auth.signin(client, None, user_regular.nickname, user_password)
+async def test_normal_nickname(client: TestClient, user_regular, password_user):
+    response = await requests.auth.signin(client, None, user_regular.nickname, password_user)
     print(response.json())
     assert response.status_code == 200
 
@@ -23,9 +23,9 @@ async def test_normal_nickname(client: TestClient, user_regular, user_password):
     assert response.json().get("used_at") is None
 
 
-async def test_incorrect_password(client: TestClient, user_regular, user_password):
+async def test_incorrect_password(client: TestClient, user_regular, password_user):
     response = await requests.auth.signin(
-        client, user_regular.email, None, "incorrect_" + user_password
+        client, user_regular.email, None, "incorrect_" + password_user
     )
     print(response.json())
     assert response.status_code == 400
@@ -34,9 +34,9 @@ async def test_incorrect_password(client: TestClient, user_regular, user_passwor
     assert response.json().get("category") == "auth"
 
 
-async def test_nonexistent(client: TestClient, user_regular, user_password):
+async def test_nonexistent(client: TestClient, user_regular, password_user):
     response = await requests.auth.signin(
-        client, "non_existent_" + user_regular.email, None, user_password
+        client, "non_existent_" + user_regular.email, None, password_user
     )
     print(response.json())
     assert response.status_code == 404

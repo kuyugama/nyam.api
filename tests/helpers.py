@@ -14,7 +14,7 @@ async def create_role(
     session: AsyncSession,
     name: str,
     default: bool = False,
-    description: str = "Description",
+    title: str = "Title",
     permissions: dict[str, bool] = None,
 ) -> Role:
     if permissions is None:
@@ -24,7 +24,7 @@ async def create_role(
 
     role = Role(
         name=name,
-        description=description,
+        title=title,
         default=default,
         permissions=permissions,
     )
@@ -36,12 +36,23 @@ async def create_role(
 
 
 async def create_user(
-    session: AsyncSession, email: str, nickname: str, password: str, role: Role
+    session: AsyncSession,
+    email: str,
+    nickname: str,
+    role: Role,
+    password: str | None = None,
+    password_hash: str | None = None,
 ) -> User:
+    if password is None and password_hash is None:
+        raise ValueError("Either password or password_hash must be provided")
+
+    if password is not None:
+        password_hash = secure_hash(password)
+
     user = User(
         email=email,
         nickname=nickname,
-        password_hash=secure_hash(password),
+        password_hash=password_hash,
         role=role,
     )
 

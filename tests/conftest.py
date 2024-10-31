@@ -1,4 +1,5 @@
 import sys
+import time
 import uuid
 import asyncio
 import pathlib
@@ -8,8 +9,6 @@ from contextlib import ExitStack
 sys.path[0] = str(pathlib.Path(sys.path[0]).parent)
 
 import pytest
-from src import permissions
-from src.models import User, Token
 from pytest_postgresql import factories
 from sqlalchemy import make_url, URL, delete
 from async_asgi_testclient import TestClient
@@ -18,8 +17,11 @@ from pytest_postgresql.janitor import DatabaseJanitor
 
 import config
 from tests import helpers
+from src import permissions
 from src.app import make_app
+from src.util import secure_hash
 from src.models.base import Base
+from src.models import User, Token
 from src.database import session_holder
 
 test_db = factories.postgresql_proc()
@@ -82,7 +84,6 @@ async def _create_tables():
 @pytest.fixture(autouse=True, scope="function")
 async def _tables_cleanup(session):
     yield
-
     for table in Base.metadata.tables.values():
         await session.execute(delete(table))
 
@@ -106,7 +107,7 @@ async def role_unverified(session):
         session,
         "unverified",
         default=True,
-        description="Unverified user",
+        title="Unverified user",
         permissions={},
     )
 
@@ -117,7 +118,7 @@ async def role_user(session):
         session,
         "user",
         default=False,
-        description="Regular user",
+        title="Regular user",
     )
 
 
@@ -127,7 +128,7 @@ async def role_moderator(session):
         session,
         "moderator",
         default=False,
-        description="Moderator",
+        title="Moderator",
         permissions={
             permissions.user.update_info: True,
             permissions.user.own.update_info: True,
@@ -141,7 +142,7 @@ async def role_admin(session):
         session,
         "admin",
         default=False,
-        description="Administrator",
+        title="Administrator",
         permissions={
             permissions.user.update_info: True,
             permissions.user.own.update_info: True,
@@ -151,41 +152,58 @@ async def role_admin(session):
     )
 
 
-@pytest.fixture
-def user_password() -> str:
+@pytest.fixture(scope="session")
+def password_user() -> str:
     return "password"
 
 
+@pytest.fixture(scope="session")
+def hash_password_user(password_user: str) -> str:
+    return secure_hash(password_user)
+
+
 @pytest.fixture
-async def user_unverified(session, user_password, role_unverified):
+async def user_unverified(session, hash_password_user, role_unverified):
     return await helpers.create_user(
         session,
         "unverified@mail.com",
         "unverified",
-        user_password,
         role_unverified,
+        password_hash=hash_password_user,
     )
 
 
 @pytest.fixture
-async def user_regular(session, user_password, role_user) -> User:
-    return await helpers.create_user(session, "user@mail.com", "user", user_password, role_user)
+async def user_regular(session, hash_password_user, role_user) -> User:
+    return await helpers.create_user(
+        session,
+        "user@mail.com",
+        "regular_user",
+        role_user,
+        password_hash=hash_password_user,
+    )
 
 
 @pytest.fixture
-async def user_moderator(session, user_password, role_moderator) -> User:
+async def user_moderator(session, hash_password_user, role_moderator) -> User:
     return await helpers.create_user(
         session,
         "moderator@mail.com",
         "moderator",
-        user_password,
         role_moderator,
+        password_hash=hash_password_user,
     )
 
 
 @pytest.fixture
-async def user_admin(session, user_password, role_admin) -> User:
-    return await helpers.create_user(session, "admin@mail.com", "admin", user_password, role_admin)
+async def user_admin(session, hash_password_user, role_admin) -> User:
+    return await helpers.create_user(
+        session,
+        "admin@mail.com",
+        "administrator",
+        role_admin,
+        password_hash=hash_password_user,
+    )
 
 
 @pytest.fixture
@@ -206,3 +224,39 @@ async def token_admin(session, user_admin) -> Token:
 @pytest.fixture
 async def expired_token(session, user_regular) -> Token:
     return await helpers.create_token(session, user_regular, valid_for=timedelta(minutes=-1))
+
+
+@pytest.fixture
+def debug_timer():
+    """
+    Used to debug tests with anomaly slow execution time.
+
+    Usage:
+    ::
+        def test_something(debug_timer):
+            debug_timer("pre fibonacci")
+            fib = fibonacci(1024)
+            debug_timer("after fibonacci")
+
+            # To see timer results in teardown output
+            assert False
+    """
+    start = time.time()
+    breaks = {}
+
+    def add_break(label: str | None = None):
+        if label is None:
+            label = "BREAK_" + str(len(breaks))
+        breaks[label] = (time.time() - start) * 1000
+
+    try:
+        yield add_break
+    finally:
+        end = time.time()
+        print("TEST TIMER")
+
+        for label, time_ in breaks.items():
+            print(f"TIME TO {label}:", time_, "ms")
+
+        print("EXECUTION TIME:", (end - start) * 1000, "ms")
+        print("TEST TIMER END")

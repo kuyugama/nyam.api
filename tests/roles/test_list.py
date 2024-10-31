@@ -1,4 +1,5 @@
 from tests import requests
+from tests.helpers import assert_contain
 
 
 async def test_normal(client, role_unverified):
@@ -9,11 +10,14 @@ async def test_normal(client, role_unverified):
     assert response.json()["pagination"] == {"total": 1, "page": 1, "pages": 1}
 
     role = response.json()["items"][0]
-    assert role["description"] == role_unverified.title
-    assert role["permissions"] == role_unverified.permissions
-    assert role["default"] == role_unverified.default
-    assert role["name"] == role_unverified.name
-    assert role["id"] == role_unverified.id
+    assert_contain(
+        role,
+        title=role_unverified.title,
+        permissions=role_unverified.permissions,
+        default=role_unverified.default,
+        name=role_unverified.name,
+        id=role_unverified.id,
+    )
 
 
 async def test_no_roles(client):
