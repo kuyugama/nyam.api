@@ -4,17 +4,17 @@ from tests import requests
 
 
 async def test_description(client, role_unverified, master_key):
-    new_description = role_unverified.title + "-new"
+    new_title = role_unverified.title + "-new"
     response = await requests.roles.update_role(
         client,
         master_key,
         role_unverified.name,
-        new_description,
+        new_title,
     )
     print(response.json())
     assert response.status_code == 200
 
-    assert response.json()["description"] == new_description
+    assert response.json()["title"] == new_title
 
 
 async def test_permissions(client, role_unverified, master_key):

@@ -1,9 +1,10 @@
 from tests import requests
+from tests.helpers import assert_contain
 
 
 async def test_normal(client, master_key):
     role_name = "name"
-    role_description = "description"
+    role_title = "title"
     default = True
     permissions_ = {}
     expected_permissions = permissions_
@@ -12,7 +13,7 @@ async def test_normal(client, master_key):
         client,
         master_key,
         role_name,
-        role_description,
+        role_title,
         default,
         permissions_,
         base_role,
@@ -20,15 +21,18 @@ async def test_normal(client, master_key):
     print(response.json())
     assert response.status_code == 200
 
-    assert response.json()["name"] == role_name
-    assert response.json()["description"] == role_description
-    assert response.json()["default"] == default
-    assert response.json()["permissions"] == expected_permissions
+    assert_contain(
+        response.json(),
+        name=role_name,
+        default=default,
+        title=role_title,
+        permissions=expected_permissions,
+    )
 
 
 async def test_use_base(client, master_key, role_user):
     role_name = "name"
-    role_description = "description"
+    role_title = "title"
     default = True
     permissions_ = {}
     expected_permissions = role_user.permissions
@@ -37,7 +41,7 @@ async def test_use_base(client, master_key, role_user):
         client,
         master_key,
         role_name,
-        role_description,
+        role_title,
         default,
         permissions_,
         base_role,
@@ -45,22 +49,25 @@ async def test_use_base(client, master_key, role_user):
     print(response.json())
     assert response.status_code == 200
 
-    assert response.json()["name"] == role_name
-    assert response.json()["description"] == role_description
-    assert response.json()["default"] == default
-    assert response.json()["permissions"] == expected_permissions
+    assert_contain(
+        response.json(),
+        name=role_name,
+        default=default,
+        title=role_title,
+        permissions=expected_permissions,
+    )
 
 
 async def test_no_master(client, master_key):
     role_name = "name"
-    role_description = "description"
+    role_title = "title"
     default = True
     permissions_ = {}
     response = await requests.roles.create_role(
         client,
         "invalid-" + master_key,
         role_name,
-        role_description,
+        role_title,
         default,
         permissions_,
         None,
