@@ -6,6 +6,7 @@ from .user import FullUser
 from .error import APIError
 from .token import FullToken
 from .error import ErrorModel
+from .client import ClientInfo
 from .model import SchemeModel
 from .image import UploadImage
 from .error import define_error
@@ -23,6 +24,7 @@ __all__ = [
     "FullUser",
     "FullToken",
     "Paginated",
+    "ClientInfo",
     "ErrorModel",
     "SchemeModel",
     "UploadImage",

@@ -27,6 +27,7 @@ puremagic = "^1.28"
 python-multipart = "^0.0.12"
 dramatiq = {extras = ["watch"], version = "^1.17.1"}
 ua-parser = "^0.18.0"
+ratelimit-fastapi = "^1.1.2"
 
 
 [build-system]
@@ -34,6 +35,10 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib"
+]
+pythonpath = ["."]
 python_functions = "test_*"
 python_files = "test_*.py"
 asyncio_mode = "auto"

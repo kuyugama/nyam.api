@@ -1,28 +1,24 @@
-import sys
-import time
 import uuid
-import asyncio
-import pathlib
-from datetime import timedelta
-from contextlib import ExitStack
-
-sys.path[0] = str(pathlib.Path(sys.path[0]).parent)
-
+import time
 import pytest
+import config
+import asyncio
+from tests import helpers
+from src import permissions
+from src.app import make_app
+from datetime import timedelta
+from src.models.base import Base
+from src.util import secure_hash
+from contextlib import ExitStack
+from src.models import User, Token
+from src.database import session_holder
 from pytest_postgresql import factories
 from sqlalchemy import make_url, URL, delete
 from async_asgi_testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from pytest_postgresql.janitor import DatabaseJanitor
+from src.ratelimit import memory_store, memory_ranking
 
-import config
-from tests import helpers
-from src import permissions
-from src.app import make_app
-from src.util import secure_hash
-from src.models.base import Base
-from src.models import User, Token
-from src.database import session_holder
 
 test_db = factories.postgresql_proc()
 
@@ -30,12 +26,26 @@ test_db = factories.postgresql_proc()
 @pytest.fixture(autouse=True)
 def _app():
     with ExitStack():
-        yield make_app(with_lifespan=False)
+        yield make_app(test_mode=True)
+
+
+@pytest.fixture(autouse=True)
+def _ratelimit_cleanup():
+    yield
+    memory_store().clear()
+    memory_ranking().clear()
 
 
 @pytest.fixture
-async def client(_app):
+def x_real_ip() -> str:
+    return "test-ip"
+
+
+@pytest.fixture
+async def client(_app, x_real_ip):
     async with TestClient(_app) as client:
+        client.headers["x-real-ip"] = x_real_ip
+        print(123)
         yield client
 
 

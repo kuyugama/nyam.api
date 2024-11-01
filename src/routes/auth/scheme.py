@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from string import ascii_letters, digits
 
 from pydantic import EmailStr, field_validator
@@ -34,9 +33,3 @@ class SignInNicknameBody(SchemeModel):
 
 
 SignInBody = SignInEmailBody | SignInNicknameBody
-
-
-@dataclass
-class ClientInfo:
-    host: str
-    agent: str
