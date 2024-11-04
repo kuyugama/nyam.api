@@ -28,7 +28,9 @@ async def update_user(
     from tasks import user_nickname_updated
 
     if body.nickname is not None:
-        user_nickname_updated.send(user.id, user.nickname, body.nickname, updated_by and updated_by.id)
+        user_nickname_updated.send(
+            user.id, user.nickname, body.nickname, updated_by and updated_by.id
+        )
         user.nickname = body.nickname
 
     if body.pseudonym is not None:
