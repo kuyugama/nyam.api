@@ -1,2 +1,14 @@
 cdn:
   url_format: https://cdn.nyam.online/{key}
+
+bot:
+  headers:
+    X-Requester: https://manga.nyam.online/bot
+
+content_providers:
+  hikka:
+    name: Hikka
+    description: "Hikka.io content provider"
+    classname: HikkaContentProvider
+    args:
+      endpoint: https://api.hikka.io/
