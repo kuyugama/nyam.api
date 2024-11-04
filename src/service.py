@@ -1,8 +1,11 @@
-from sqlalchemy import select
+from datetime import timedelta
+
+from sqlalchemy import select, delete
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Token, User, Role
+from src.util import now
 
 
 async def get_token(session: AsyncSession, body: str) -> Token | None:
@@ -13,6 +16,11 @@ async def get_token(session: AsyncSession, body: str) -> Token | None:
             joinedload(Token.owner).options(joinedload(User.avatar), joinedload(User.role)),
         )
     )
+
+
+async def drop_expired_tokens(session: AsyncSession, shift: timedelta = timedelta(days=2)) -> None:
+    await session.execute(delete(Token).filter(Token.expire_at <= (now() - abs(shift))))
+    await session.commit()
 
 
 async def get_default_role(session: AsyncSession) -> Role | None:
