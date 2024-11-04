@@ -1,9 +1,10 @@
 from pydantic import Field
 
-from .genre import Genre
 from .user import User
+from .genre import Genre
 from .model import Object
 from src import constants
+from .image import UploadImage
 
 
 class Composition(Object):
@@ -18,6 +19,8 @@ class Composition(Object):
             constants.STYLE_COMPOSITION_RANOBE,
         ],
     )
+
+    preview: UploadImage = Field(description="Composition preview")
 
     # Titles
     title_original: str | None = Field(description="Original composition title")
