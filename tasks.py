@@ -81,9 +81,15 @@ async def new_login(session: AsyncSession, user_id: int, address: str, agent: st
 
 @dramatiq.actor
 @with_session
-async def user_nickname_updated(session: AsyncSession, user_id: str, before: str, after: str, updated_by: int | None = None) -> None:
+async def user_nickname_updated(
+    session: AsyncSession, user_id: str, before: str, after: str, updated_by: int | None = None
+) -> None:
     from src.models import User
+
     user = await session.get(User, user_id)
+
+    if user is None:
+        return
 
     # There should be logic to save up to 10 nickname changes per user
     write("USER NICKNAME UPDATE")
