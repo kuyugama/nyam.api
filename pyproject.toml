@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["kuyugama <mail.kuyugama@gmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -28,6 +29,7 @@ python-multipart = "^0.0.12"
 dramatiq = {extras = ["watch"], version = "^1.17.1"}
 ua-parser = "^0.18.0"
 ratelimit-fastapi = "^1.1.2"
+aiohttp = "^3.10.10"
 
 
 [build-system]

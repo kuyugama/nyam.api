@@ -7,6 +7,7 @@ from src import constants
 
 from .datetime_util import now
 from .s3_util import delete_obj
+from .string_util import slugify
 from .image_util import file_size
 from .image_util import compress_png
 from .string_util import secure_hash
@@ -27,6 +28,7 @@ from .fastapi_util import render_route_permissions
 
 __all__ = [
     "now",
+    "slugify",
     "file_size",
     "has_errors",
     "delete_obj",

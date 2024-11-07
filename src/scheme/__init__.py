@@ -11,8 +11,11 @@ from .model import SchemeModel
 from .image import UploadImage
 from .error import define_error
 from .pagination import Paginated
+from .composition import Composition
 from .error import ValidationErrorModel
 from .error import define_error_category
+from .composition import CompositionVariant
+from .content_provider import ContentProvider
 
 
 __all__ = [
@@ -28,7 +31,10 @@ __all__ = [
     "ErrorModel",
     "SchemeModel",
     "UploadImage",
+    "Composition",
     "define_error",
+    "ContentProvider",
+    "CompositionVariant",
     "ValidationErrorModel",
     "define_error_category",
 ]

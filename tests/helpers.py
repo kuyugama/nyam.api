@@ -1,13 +1,24 @@
+import copy
+import hashlib
 import secrets
-from datetime import timedelta
 from typing import Any
+from datetime import timedelta, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import src
 import src.permissions
+from src import util, constants
 from src.util import now, secure_hash
-from src.models import User, Token, Role
+from src.models import User, Token, Role, Composition
+
+
+class MockedResponse:
+    def __init__(self, data: dict):
+        self.data = copy.deepcopy(data)
+
+    async def json(self):
+        return self.data
 
 
 async def create_role(
@@ -74,6 +85,61 @@ async def create_token(
     await session.commit()
 
     return token
+
+
+async def create_composition(
+    session: AsyncSession,
+    title_original: str = "World Trigger | Season 3",
+    title_en: str | None = None,
+    title_uk: str | None = None,
+    synopsis_en: str | None = None,
+    synopsis_uk: str | None = None,
+    status: str = constants.STATUS_COMPOSITION_COMPLETED,
+    year: int | None = 2000,
+    start_date: datetime | None = None,
+    nsfw: bool = False,
+    genres: list[dict] | None = None,
+    tags: list[str] | None = None,
+    chapters: int | None = None,
+    volumes: int | None = None,
+    mal_id: int | None = None,
+    style: str = constants.STYLE_COMPOSITION_MANGA,
+):
+    if genres is None:
+        genres = []
+
+    if tags is None:
+        tags = []
+
+    ref = hashlib.sha256(title_original.encode()).hexdigest()
+    slug = util.slugify(title_original, ref)
+
+    composition = Composition(
+        slug=slug,
+        title_original=title_original,
+        title_en=title_en,
+        title_uk=title_uk,
+        synopsis_en=synopsis_en,
+        synopsis_uk=synopsis_uk,
+        status=status,
+        year=year,
+        start_date=start_date,
+        nsfw=nsfw,
+        genres=genres,
+        tags=tags,
+        chapters=chapters,
+        volumes=volumes,
+        mal_id=mal_id,
+        provider=None,  # type: ignore
+        provider_id=None,  # type: ignore
+        style=style,
+    )
+
+    session.add(composition)
+
+    await session.commit()
+
+    return composition
 
 
 def assert_contain(source: dict[str, Any], **kw):

@@ -1,0 +1,101 @@
+{
+  "data_type": "manga",
+  "authors": [
+    {
+      "roles": [
+        {
+          "name_ua": null,
+          "name_en": "Story",
+          "weight": 0,
+          "slug": "story"
+        },
+        {
+          "name_ua": null,
+          "name_en": "Art",
+          "weight": 0,
+          "slug": "art"
+        }
+      ],
+      "person": {
+        "data_type": "person",
+        "name_native": "水沢 めぐみ",
+        "name_ua": null,
+        "name_en": "Megumi Mizusawa",
+        "image": "https://cdn.hikka.io/content/people/megumi-mizusawa-55eb5e/s75lUkOhuFockl8ogIrjaw.jpg",
+        "slug": "megumi-mizusawa-55eb5e",
+        "description_ua": null,
+        "synonyms": []
+      }
+    }
+  ],
+  "magazines": [
+    {
+      "name_en": "Ribon Original",
+      "slug": "ribon-original-83d684"
+    }
+  ],
+  "external": [],
+  "start_date": null,
+  "end_date": null,
+  "genres": [
+    {
+      "name_ua": "Буденність",
+      "name_en": "Slice of Life",
+      "slug": "slice-of-life",
+      "type": "genre"
+    },
+    {
+      "name_ua": "Романтика",
+      "name_en": "Romance",
+      "slug": "romance",
+      "type": "genre"
+    },
+    {
+      "name_ua": "Шьоджьо",
+      "name_en": "Shoujo",
+      "slug": "shoujo",
+      "type": "demographic"
+    }
+  ],
+  "title_original": "Ohana Moyou no One-Piece",
+  "stats": {
+    "completed": 367,
+    "reading": 31,
+    "on_hold": 13,
+    "dropped": 11,
+    "planned": 186,
+    "score_1": 4,
+    "score_2": 0,
+    "score_3": 2,
+    "score_4": 3,
+    "score_5": 12,
+    "score_6": 51,
+    "score_7": 80,
+    "score_8": 49,
+    "score_9": 23,
+    "score_10": 27
+  },
+  "synopsis_en": "Tomboyish Ayuka is in love with her childhood friend Sakamoto. At the start of her third year of middle school she meets a new friend Sally-chan. Sally-chan also seems to have feelings for Sakamoto. Will Ayuka have the courage to confess her feelings or will Sally-chan beat her to it? \n\n(Source: Alice Dreams)",
+  "synopsis_ua": null,
+  "media_type": "manga",
+  "chapters": 4,
+  "title_en": null,
+  "title_ua": null,
+  "updated": 1730320841,
+  "synonyms": [
+    "Flower Pattern Dress",
+    "Ohana Moyou no Wanbiisu"
+  ],
+  "comments_count": 0,
+  "has_franchise": false,
+  "translated_ua": false,
+  "volumes": 1,
+  "status": "finished",
+  "image": "https://cdn.hikka.io/content/manga/ohana-moyou-no-one-piece-fd24f5/ZZG8GL0rI8WGpIlYvUEvDw.jpg",
+  "year": null,
+  "scored_by": 251,
+  "score": 7.08,
+  "mal_id": 20768,
+  "nsfw": false,
+  "slug": "ohana-moyou-no-one-piece-fd24f5"
+}
