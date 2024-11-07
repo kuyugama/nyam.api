@@ -1,0 +1,67 @@
+name: Run tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: "Tests"
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: database
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: user
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+
+        ports:
+          - 6379:6379
+
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --no-root
+
+    - name: Make .secrets.yaml
+      run: cp secrets-example.yaml .secrets.yaml
+
+    - name: Run tests
+      run: |
+        pytest
