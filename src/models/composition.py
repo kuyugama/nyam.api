@@ -14,7 +14,7 @@ class Composition(Base):
     preview_id = mapped_column(ForeignKey(UploadImage.id, ondelete="SET NULL"), nullable=True)
     preview: Mapped[UploadImage] = relationship(UploadImage)
 
-    slug: Mapped[str]
+    slug: Mapped[str] = mapped_column(index=True)
 
     style: Mapped[str] = mapped_column(index=True)
 

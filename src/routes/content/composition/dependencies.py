@@ -1,3 +1,5 @@
+import time
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +16,7 @@ provider_composition_not_found = define_error(
 composition_already_exists = define_error(
     "composition-already-exists", "Composition already exists", 400
 )
+composition_not_found = define_error("composition-not-found", "Composition not found", 404)
 
 
 @provider_composition_not_found.mark
@@ -23,6 +26,7 @@ async def require_provider_composition(
     provider: BaseContentProvider = Depends(require_provider),
     session: AsyncSession = Depends(acquire_session),
 ):
+    start = time.time()
     provider_composition = await provider.parse_composition(provider_id)
 
     if provider_composition is None:
@@ -32,3 +36,15 @@ async def require_provider_composition(
         raise composition_already_exists
 
     return provider_composition
+
+
+@composition_not_found.mark
+async def require_composition(
+    slug: str,
+    session: AsyncSession = Depends(acquire_session),
+):
+    composition = await service.get_composition_by_slug(session, slug)
+    if composition is None:
+        raise composition_not_found
+
+    return composition

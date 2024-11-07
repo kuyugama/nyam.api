@@ -2,7 +2,7 @@ from pydantic import Field
 
 from .user import User
 from .genre import Genre
-from .model import Object
+from .model import Object, datetime_pd
 from src import constants
 from .image import UploadImage
 
@@ -20,7 +20,7 @@ class Composition(Object):
         ],
     )
 
-    preview: UploadImage = Field(description="Composition preview")
+    preview: UploadImage | None = Field(description="Composition preview")
 
     # Titles
     title_original: str | None = Field(description="Original composition title")
@@ -38,7 +38,8 @@ class Composition(Object):
         description="Composition status",
         examples=[constants.STATUS_COMPOSITION_PENDING, constants.STATUS_COMPOSITION_COMPLETED],
     )
-    year: int = Field(description="Composition year")
+    year: int | None = Field(description="Composition year")
+    start_date: datetime_pd | None = Field(description="Composition start date")
     nsfw: bool = Field(description="Is composition nsfw")
     genres: list[Genre] = Field(description="Composition genres")
     tags: list[str] = Field(description="Composition tags")

@@ -2,11 +2,12 @@ from fastapi import APIRouter, Query
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src import scheme
-from src.database import acquire_session
 from . import service
-from .dependencies import require_provider_composition
+from src import scheme
+from src.models import Composition
+from src.database import acquire_session
 from ..dependencies import require_provider
+from .dependencies import require_provider_composition, require_composition
 from src.content_providers import SearchEntry, BaseContentProvider, ContentProviderComposition
 
 router = APIRouter(prefix="/composition")
@@ -45,5 +46,5 @@ async def publish_composition_from_provider(
     response_model=scheme.Composition,
     operation_id="get_composition",
 )
-async def get_composition(slug: str, session: AsyncSession = Depends(acquire_session)):
-    return await service.get_composition_by_slug(session, slug)
+async def get_composition(composition: Composition = Depends(require_composition)):
+    return composition

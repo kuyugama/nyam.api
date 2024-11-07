@@ -3,10 +3,10 @@ from uuid import UUID
 
 import aiohttp
 
+from src import constants
+from src.scheme import Paginated
+from src.util.image_util import web_image_metadata
 from .base import BaseContentProvider, ContentProviderComposition, SearchEntry
-from .. import constants
-from ..scheme import Paginated
-from ..util.image_util import web_image_metadata
 
 
 def _format_genres(genres: list[dict]) -> list[dict]:
