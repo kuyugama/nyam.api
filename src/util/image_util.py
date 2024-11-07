@@ -1,8 +1,13 @@
 import secrets
 from io import BytesIO
 from typing import BinaryIO
+from tempfile import TemporaryFile
 
+import puremagic
 from PIL import Image
+from aiohttp import ClientSession
+
+from config import settings
 
 MB = 1024 * 1024
 
@@ -65,3 +70,25 @@ def compress_png(file: BinaryIO, max_width: int, max_height: int) -> BytesIO:
     img.save(io, quality=95, optimize=True)
     io.seek(0)
     return io
+
+
+async def web_image_metadata(url: str, client: ClientSession = None) -> dict[str, str | int] | None:
+    if client is None:
+        client = ClientSession()
+
+    with TemporaryFile("w+b") as file:
+        async with client:
+            resp = await client.get(url, headers=settings.bot.headers)
+
+            if resp.status != 200:
+                return None
+
+            while (data := await resp.content.read(4096)) != b"":
+                file.write(data)
+
+        file.seek(0)
+        width, height = Image.open(file).size
+        file.seek(0)
+        mime = puremagic.from_stream(file, mime=True)
+
+        return {"width": width, "height": height, "mimetype": mime, "url": url}

@@ -227,6 +227,11 @@ async def expired_token(session, user_regular) -> Token:
 
 
 @pytest.fixture
+async def composition(session):
+    return await helpers.create_composition(session)
+
+
+@pytest.fixture
 def debug_timer():
     """
     Used to debug tests with anomaly slow execution time.
@@ -239,7 +244,7 @@ def debug_timer():
             debug_timer("after fibonacci")
 
             # To see timer results in teardown output
-            assert False
+            assert debug_timer.value
     """
     start = time.time()
     breaks = {}
@@ -249,14 +254,19 @@ def debug_timer():
             label = "BREAK_" + str(len(breaks))
         breaks[label] = (time.time() - start) * 1000
 
+    add_break.value = False
+
     try:
         yield add_break
     finally:
-        end = time.time()
+        add_break("END")
         print("TEST TIMER")
 
+        print("LABEL".ljust(50), "TIME TO LABEL".ljust(20), "TOOK", sep="")
+        last_label_time = 0
         for label, time_ in breaks.items():
-            print(f"TIME TO {label}:", time_, "ms")
+            took = time_ - last_label_time
+            print(label.ljust(50), f"{time_:.4f}ms".ljust(20), f"{took:.4f}ms", sep="")
+            last_label_time = time_
 
-        print("EXECUTION TIME:", (end - start) * 1000, "ms")
         print("TEST TIMER END")

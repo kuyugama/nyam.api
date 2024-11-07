@@ -54,6 +54,7 @@ def make_app(with_lifespan: bool = True) -> fastapi.FastAPI:
         responses={422: dict(model=scheme.ValidationErrorModel)},
         openapi_tags=[
             {"name": "Авторизація"},
+            {"name": "Контент"},
             {"name": "Користувачі"},
             {"name": "Ролі"},
             {"name": "default"},
