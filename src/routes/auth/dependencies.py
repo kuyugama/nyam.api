@@ -1,4 +1,5 @@
-from fastapi import Depends, Request
+from fastapi import Depends
+from ratelimit import RatelimitContext, require_ratelimit_context
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import service
@@ -7,13 +8,12 @@ from src.database import acquire_session
 from src.util import verify_payload, has_errors
 
 from .scheme import (
-    ClientInfo,
     SignUpBody,
     SignInBody,
     SignInEmailBody,
     SignInNicknameBody,
 )
-from ...service import get_default_role
+from src.service import get_default_role
 
 define_error = scheme.define_error_category("auth")
 default_role_not_exist = scheme.define_error(
@@ -26,19 +26,6 @@ email_occupied = define_error("email-occupied", "Email occupied", 400)
 nickname_occupied = define_error("nickname-occupied", "Nickname occupied", 400)
 user_not_found = define_error("user-not-found", "User not found", 404)
 password_incorrect = define_error("password-incorrect", "Password incorrect", 400)
-
-
-def client_details(request: Request) -> ClientInfo:
-    agent = request.headers.get("User-Agent", None)
-
-    if request.client:
-        return ClientInfo(request.client.host, agent)
-
-    if "x-forwarder-for" in request.headers:
-        return ClientInfo(request.headers["x-forwarder-for"], agent)
-
-    if "x-real-ip" in request.headers:
-        return ClientInfo(request.headers["x-real-ip"], agent)
 
 
 @has_errors(email_occupied, nickname_occupied, default_role_not_exist)
@@ -58,7 +45,11 @@ async def validate_signup(
 
 
 @has_errors(password_incorrect, user_not_found)
-async def validate_signin(body: SignInBody, session: AsyncSession = Depends(acquire_session)):
+async def validate_signin(
+    body: SignInBody,
+    session: AsyncSession = Depends(acquire_session),
+    context: RatelimitContext = Depends(require_ratelimit_context),
+):
     user = None
     if isinstance(body, SignInEmailBody):
         user = await service.get_user_by_email(session, body.email)
@@ -71,5 +62,7 @@ async def validate_signin(body: SignInBody, session: AsyncSession = Depends(acqu
 
     if not verify_payload(body.password, user.password_hash):
         raise password_incorrect
+
+    context.ignore_hit()  # ignore success hits
 
     return user

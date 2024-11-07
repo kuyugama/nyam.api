@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Header, Query, Depends, BackgroundTasks, params
+from fastapi import Header, Query, Depends, BackgroundTasks, params, Request
 
 from .models import Token
 from config import settings
@@ -15,6 +15,19 @@ master_required = define_error("master-required", "Master token required", 401)
 permission_denied = scheme.define_error(
     "permissions", "denied", "Permission denied: required permissions: {permissions}", 403
 )
+
+
+def client_details(request: Request) -> scheme.ClientInfo:
+    agent = request.headers.get("User-Agent", None)
+
+    if request.client:
+        return scheme.ClientInfo(request.client.host, agent)
+
+    if "x-forwarder-for" in request.headers:
+        return scheme.ClientInfo(request.headers["x-forwarder-for"], agent)
+
+    if "x-real-ip" in request.headers:
+        return scheme.ClientInfo(request.headers["x-real-ip"], agent)
 
 
 async def _use_token(token: str):
@@ -31,6 +44,11 @@ async def _use_token(token: str):
         token.owner.prolong_online()
         session.add_all([token, token.owner])
         await session.commit()
+
+
+async def _drop_expired_tokens():
+    async with session_holder.session() as session:
+        await service.drop_expired_tokens(session)
 
 
 @token_expired.mark
@@ -56,6 +74,8 @@ async def optional_token(
         # Prolong token, user online status and mark token as used only if it is a real token
         if isinstance(token, Token):
             background.add_task(_use_token, token_body)
+
+        background.add_task(_drop_expired_tokens)
 
 
 @token_required.mark

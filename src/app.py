@@ -1,12 +1,19 @@
+import logging
 from contextlib import asynccontextmanager
+from typing import Callable, AsyncContextManager
 
 import fastapi
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
+from redis.asyncio import Redis
+from ratelimit import setup_app
+from ratelimit.store.redis import RedisStore
+from ratelimit.ranking.redis import RedisRanking
 
 import config
 from src import scheme
 from src.database import session_holder
 from src.routes import router as main_router
+from src.ratelimit import RatelimitUser, authentication_func, memory_ranking, memory_store
 
 from src.util import (
     format_error,
@@ -38,18 +45,39 @@ async def validation_error_handler(
     )
 
 
-@asynccontextmanager
-async def lifespan(app: fastapi.FastAPI):
-    session_holder.init(url=config.settings.postgresql.url)
-    setup_route_errors(app)
-    render_route_permissions(app)
-    yield
-    await session_holder.close()
+def lifespan(test_mode: bool = True) -> Callable[[FastAPI], AsyncContextManager[None]]:
+    async def lifespan(app: fastapi.FastAPI):
+        if test_mode:
+            ranking = memory_ranking()
+            store = memory_store()
+        else:
+            session_holder.init(url=config.settings.postgresql.url)
+            redis = Redis.from_url(url=config.settings.redis.url)
+            ranking = RedisRanking(redis, RatelimitUser)
+            store = RedisStore(redis)
+
+            setup_route_errors(app)
+            render_route_permissions(app)
+
+        setup_app(
+            app,
+            ranking=ranking,
+            store=store,
+            authentication_func=authentication_func,
+        )
+
+        yield
+
+        if not test_mode:
+            await session_holder.close()
+
+    return asynccontextmanager(lifespan)
 
 
-def make_app(with_lifespan: bool = True) -> fastapi.FastAPI:
+def make_app(test_mode: bool = False) -> fastapi.FastAPI:
+    logging.basicConfig(level=logging.DEBUG)
     app = fastapi.FastAPI(
-        lifespan=lifespan if with_lifespan else None,
+        lifespan=lifespan(test_mode=test_mode),
         redoc_url=None,
         responses={422: dict(model=scheme.ValidationErrorModel)},
         openapi_tags=[

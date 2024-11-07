@@ -1,16 +1,18 @@
 import fastapi
 from fastapi import Depends
+from datetime import timedelta
+from ratelimit import ratelimit, LimitRule
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import service
 from src import scheme
 from tasks import new_login
+from .scheme import SignUpBody
 from src.models import User, Token
 from src.database import acquire_session
-from .scheme import SignUpBody, ClientInfo
-from src.dependencies import require_token
+from src.dependencies import require_token, client_details
 
-from .dependencies import client_details, validate_signin, validate_signup
+from .dependencies import validate_signin, validate_signup
 
 router = fastapi.APIRouter(
     prefix="/auth",
@@ -38,11 +40,27 @@ async def signup(
     response_model=scheme.Token,
     summary="Вхід",
     operation_id="signin",
+    dependencies=[
+        Depends(
+            ratelimit(
+                LimitRule(
+                    hits=30,
+                    batch_time=timedelta(minutes=5).total_seconds(),
+                    block_time=timedelta(minutes=5).total_seconds(),
+                ),
+                LimitRule(
+                    hits=30,
+                    batch_time=timedelta(minutes=5).total_seconds(),
+                    block_time=timedelta(minutes=10).total_seconds(),
+                )
+            )
+        )
+    ],
 )
 async def signin(
     user: User = Depends(validate_signin),
     session: AsyncSession = Depends(acquire_session),
-    client: ClientInfo = Depends(client_details),
+    client: scheme.ClientInfo = Depends(client_details),
 ):
     if client:
         new_login.send(user.id, client.host, client.agent)

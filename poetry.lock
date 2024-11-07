@@ -205,13 +205,13 @@ frozenlist = ">=1.1.0"
 
 [[package]]
 name = "alembic"
-version = "1.13.3"
+version = "1.14.0"
 description = "A database migration tool for SQLAlchemy."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "alembic-1.13.3-py3-none-any.whl", hash = "sha256:908e905976d15235fae59c9ac42c4c5b75cfcefe3d27c0fbf7ae15a37715d80e"},
-    {file = "alembic-1.13.3.tar.gz", hash = "sha256:203503117415561e203aa14541740643a611f641517f0209fcae63e9fa09f1a2"},
+    {file = "alembic-1.14.0-py3-none-any.whl", hash = "sha256:99bd884ca390466db5e27ffccff1d179ec5c05c965cfefc0607e69f9e411cb25"},
+    {file = "alembic-1.14.0.tar.gz", hash = "sha256:b00892b53b3642d0b8dbedba234dbf1924b69be83a9a769d5a624b01094e304b"},
 ]
 
 [package.dependencies]
@@ -283,13 +283,13 @@ requests = ">=2.21,<3.0"
 
 [[package]]
 name = "async-timeout"
-version = "5.0.0"
+version = "5.0.1"
 description = "Timeout context manager for asyncio programs"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "async_timeout-5.0.0-py3-none-any.whl", hash = "sha256:904719a4bd6e0520047d0ddae220aabee67b877f7ca17bf8cea20f67f6247ae0"},
-    {file = "async_timeout-5.0.0.tar.gz", hash = "sha256:49675ec889daacfe65ff66d2dde7dd1447a6f4b2f23721022e4ba121f8772a85"},
+    {file = "async_timeout-5.0.1-py3-none-any.whl", hash = "sha256:39e3809566ff85354557ec2398b55e096c8364bacac9405a7a1fa429e77fe76c"},
+    {file = "async_timeout-5.0.1.tar.gz", hash = "sha256:d9321a7a3d5a6a5e187e824d2fa0793ce379a202935782d555d6e9d2735677d3"},
 ]
 
 [[package]]
@@ -2051,6 +2051,23 @@ files = [
 ]
 
 [[package]]
+name = "ratelimit-fastapi"
+version = "1.1.3"
+description = "Ratelimit solution for FastAPI"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "ratelimit_fastapi-1.1.3-py3-none-any.whl", hash = "sha256:310b84b527aaabc2379eb63c077ece96bb15449daea53a9b3e98ba934c269027"},
+    {file = "ratelimit_fastapi-1.1.3.tar.gz", hash = "sha256:68e0785543d956a741df8d3b1f97b90b45cd5a28bc353020fdd982d5aafa47de"},
+]
+
+[package.dependencies]
+fastapi = ">=0.115.0"
+
+[package.extras]
+redis = ["redis[hiredis] (>=5.2.0,<6.0.0)"]
+
+[[package]]
 name = "redis"
 version = "5.2.0"
 description = "Python client for Redis database and key-value store"
@@ -2660,4 +2677,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "8eb50d5bbd2f3cec46e9f65773e61263a494c6b67511857ad19893550c9f4bbc"
+content-hash = "91c597aa5254063210023011f332ca0c26eb269fe4b91796c67d9cc63884031f"
