@@ -31,6 +31,10 @@ async def get_role_by_name(session: AsyncSession, name: str) -> Role | None:
     return await session.scalar(select(Role).filter(Role.name == name))
 
 
+async def get_role_by_weight(session: AsyncSession, weight: int) -> Role | None:
+    return await session.scalar(select(Role).filter(Role.weight == weight))
+
+
 async def get_user_by_nickname(session: AsyncSession, nickname: str) -> User | None:
     return await session.scalar(
         select(User)

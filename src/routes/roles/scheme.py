@@ -23,6 +23,7 @@ class CreateRoleBody(SchemeModel):
     name: str = Field(max_length=128)
     base_role: str | None = Field(None)
     title: str = Field(max_length=512)
+    weight: int | None = Field(None)
     default: bool = Field(False)
     permissions: dict[str, bool] = Field(
         examples=permissions_examples,
@@ -38,8 +39,9 @@ class CreateRoleBody(SchemeModel):
 class UpdateRoleBody(SchemeModel):
     title: str | None = Field(max_length=512)
     default: bool | None = Field(default=False)
+    weight: int | None = Field(default=None)
     permissions: dict[str, bool] | None = Field(examples=permissions_examples)
-    merge_permissions: bool = Field(True, description="Whether to replace permissions")
+    merge_permissions: bool = Field(True, description="Whether to merge permissions")
 
     @field_validator("permissions")
     def validate_permissions(cls, v: dict[str, bool] | None) -> dict[str, bool] | None:

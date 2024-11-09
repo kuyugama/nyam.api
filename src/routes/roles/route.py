@@ -10,6 +10,7 @@ from src.dependencies import require_page, master_lock
 from .scheme import CreateRoleBody, UpdateRoleBody, FullRole, Paginated
 
 from .dependencies import (
+    validate_role,
     validate_role_create,
     validate_role_update,
     validate_role_delete,
@@ -51,11 +52,11 @@ async def create_role(
     operation_id="update_role",
 )
 async def update_role(
-    name: str,
+    role: Role = Depends(validate_role),
     body: UpdateRoleBody = Depends(validate_role_update),
     session: AsyncSession = Depends(acquire_session),
 ):
-    return await service.update_role(session, body, await service.get_role(session, name))
+    return await service.update_role(session, body, role)
 
 
 @router.delete(
