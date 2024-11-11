@@ -45,7 +45,6 @@ def x_real_ip() -> str:
 async def client(_app, x_real_ip):
     async with TestClient(_app) as client:
         client.headers["x-real-ip"] = x_real_ip
-        print(123)
         yield client
 
 
@@ -116,6 +115,7 @@ async def role_unverified(session):
     return await helpers.create_role(
         session,
         "unverified",
+        0,
         default=True,
         title="Unverified user",
         permissions={},
@@ -127,6 +127,7 @@ async def role_user(session):
     return await helpers.create_role(
         session,
         "user",
+        10,
         default=False,
         title="Regular user",
     )
@@ -137,6 +138,7 @@ async def role_moderator(session):
     return await helpers.create_role(
         session,
         "moderator",
+        20,
         default=False,
         title="Moderator",
         permissions={
@@ -151,6 +153,7 @@ async def role_admin(session):
     return await helpers.create_role(
         session,
         "admin",
+        30,
         default=False,
         title="Administrator",
         permissions={

@@ -10,6 +10,7 @@ async def create_role(
     default: bool = False,
     permissions: dict[str, bool] = None,
     base_role: str = None,
+    weight: int | None = None,
 ) -> Response:
     if permissions is None:
         permissions = {}
@@ -20,6 +21,7 @@ async def create_role(
         json={
             "name": name,
             "title": title,
+            "weight": weight,
             "default": default,
             "permissions": permissions,
             "base_role": base_role,

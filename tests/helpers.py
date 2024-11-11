@@ -24,6 +24,7 @@ class MockedResponse:
 async def create_role(
     session: AsyncSession,
     name: str,
+    weight: int,
     default: bool = False,
     title: str = "Title",
     permissions: dict[str, bool] = None,
@@ -36,6 +37,7 @@ async def create_role(
     role = Role(
         name=name,
         title=title,
+        weight=weight,
         default=default,
         permissions=permissions,
     )

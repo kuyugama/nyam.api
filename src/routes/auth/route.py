@@ -52,7 +52,7 @@ async def signup(
                     hits=30,
                     batch_time=timedelta(minutes=5).total_seconds(),
                     block_time=timedelta(minutes=10).total_seconds(),
-                )
+                ),
             )
         )
     ],
