@@ -18,6 +18,7 @@ user = User()
 class ContentEntry(Permission):
     publish: str
     delete: str
+    update: str
 
 
 class Content(Permission):
@@ -28,3 +29,42 @@ class Content(Permission):
 
 
 content = Content()
+
+
+class ContentVariant(Permission):
+    create: str
+    delete: str
+    update: str
+
+
+content_variant = ContentVariant()
+
+
+class Volume(Permission):
+    create: str
+    delete: str
+    update: str
+
+
+volume = Volume()
+
+
+class Chapter(Permission):
+    create: str
+    delete: str
+    update: str
+
+
+chapter = Chapter()
+
+
+class Page(Permission):
+    create: str
+    delete: str
+    update: str
+
+
+page_text = Page("page-text")
+page_image = Page("page-image")
+
+override_author = Permission("override-author")

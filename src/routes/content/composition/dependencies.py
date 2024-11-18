@@ -1,13 +1,15 @@
-import time
-
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database import acquire_session
 from . import service
+from src import permissions
+from src.models import Composition
+from src.database import acquire_session
 from ..dependencies import require_provider
 from src.scheme import define_error_category
+from .scheme import CreateCompositionVariantBody
 from src.content_providers import BaseContentProvider
+from src.dependencies import interactive_require_permissions
 
 define_error = define_error_category("content/composition")
 provider_composition_not_found = define_error(
@@ -26,7 +28,6 @@ async def require_provider_composition(
     provider: BaseContentProvider = Depends(require_provider),
     session: AsyncSession = Depends(acquire_session),
 ):
-    start = time.time()
     provider_composition = await provider.parse_composition(provider_id)
 
     if provider_composition is None:
@@ -42,9 +43,19 @@ async def require_provider_composition(
 async def require_composition(
     slug: str,
     session: AsyncSession = Depends(acquire_session),
-):
+) -> Composition:
     composition = await service.get_composition_by_slug(session, slug)
     if composition is None:
         raise composition_not_found
 
     return composition
+
+
+async def validate_publish_variant(
+    body: CreateCompositionVariantBody,
+    origin: Composition = Depends(require_composition),
+    has_permission=Depends(interactive_require_permissions),
+):
+    has_permission(permissions.content[origin.style].update)
+
+    return body

@@ -42,12 +42,17 @@ class Permission(str):
     """
 
     def __init__(self, permission: str | None = None):
-        self.permission = permission or camel_to_snake(type(self).__qualname__)
+        self.permission = permission or camel_to_snake(type(self).__qualname__).replace("_", "-")
+        self.space = type(self).__annotations__
 
         if permission is None:
             permission_registry.extend(
                 sorted(gather_permissions(type(self), self.permission + "."))
             )
+
+    def use_space(self, space: type):
+        self.space = {} if space is str else space.__annotations__
+        return self
 
     def __str__(self):
         return self.permission
@@ -59,15 +64,18 @@ class Permission(str):
         return "{other} | {self}".format(self=self, other=other)
 
     def sub(self, permission: str):
-        if permission not in self.__annotations__:
+        if permission not in self.space:
             raise AttributeError(f"Permission not defined: {self.permission} -> {permission}")
 
-        return self.__annotations__[permission](
-            self.permission + "." + permission.replace("_", "-")
+        return Permission(self.permission + "." + permission.replace("_", "-")).use_space(
+            self.space[permission]
         )
 
     def __getattr__(self, attr):
         return self.sub(attr)
+
+    def __getitem__(self, item):
+        return self.sub(item)
 
 
 def match(required: str, available: str) -> bool:

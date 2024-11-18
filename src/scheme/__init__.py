@@ -2,8 +2,12 @@ from .user import User
 from .role import Role
 from .token import Token
 from .model import Object
+from .page import TextPage
+from .volume import Volume
 from .user import FullUser
+from .page import ImagePage
 from .error import APIError
+from .chapter import Chapter
 from .token import FullToken
 from .error import ErrorModel
 from .client import ClientInfo
@@ -22,9 +26,13 @@ __all__ = [
     "User",
     "Role",
     "Token",
+    "Volume",
     "Object",
+    "Chapter",
+    "TextPage",
     "APIError",
     "FullUser",
+    "ImagePage",
     "FullToken",
     "Paginated",
     "ClientInfo",

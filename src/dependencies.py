@@ -1,12 +1,13 @@
 from functools import lru_cache
 
+import puremagic
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Header, Query, Depends, BackgroundTasks, params, Request
+from fastapi import Header, Query, Depends, BackgroundTasks, params, Request, UploadFile
 
-from .models import Token
 from config import settings
 from . import service, scheme, util
 from src.database import session_holder, acquire_session
+from .models import Token, CompositionVariant, Volume, Chapter
 
 define_error = scheme.define_error_category("token")
 token_required = define_error("required", "Token required", 401)
@@ -101,6 +102,19 @@ def master_lock(master_granted: bool = Depends(master_grant)):
         raise master_required
 
 
+def check_permissions(master_granted: bool, token: Token | None, *permissions: str) -> bool:
+    if master_granted:
+        return True
+
+    if not isinstance(token, Token):
+        return False
+
+    if not util.check_permissions(permissions, token.owner.permissions):
+        return False
+
+    return True
+
+
 @lru_cache
 def require_permissions(*permissions: str) -> params.Depends:
     """
@@ -130,22 +144,97 @@ def require_permissions(*permissions: str) -> params.Depends:
         master_granted: bool = Depends(master_grant),
         token: Token | None = Depends(optional_token),
     ):
-        if master_granted:
-            return
-
-        extra = dict(permissions=", ".join(permissions))
-
-        if not isinstance(token, Token):
-            raise permission_denied(extra=extra)
-
-        if not util.check_permissions(permissions, token.owner.permissions):
-            raise permission_denied(extra=extra)
+        if not check_permissions(master_granted, token, *permissions):
+            raise permission_denied(extra=dict(permissions=", ".join(permissions)))
 
     setattr(dependency, "permissions", permissions)
 
     return Depends(dependency)
 
 
+@permission_denied.mark
+def interactive_require_permissions(
+    master_granted: bool = Depends(master_grant), token: Token | None = Depends(optional_token)
+):
+    """
+    Interactive permission shield for endpoint. Filters out all users that doesn't have required permissions.
+
+    Permissions format:
+    ::
+        CATEGORY = SUBCATEGORY = NAME = [-a-z]+
+
+        PERMISSION = {NAME} | {CATEGORY}.{NAME} | {CATEGORY}.{SUBCATEGORY}.{NAME}
+
+        PERMISSION_ENTRY = "{PERMISSION}" | "{PERMISSION} | {PERMISSION_ENTRY}"
+
+    One permission entry can contain multiple permissions divided by "|".
+    In this case if any of permissions in this entry exists in user's permission - this entry will
+    pass permission check
+
+    Example:
+    ::
+        async def dependency(check_permission = Depends(interactive_require_permissions)):
+            content = await service.get_content(...)
+            check_permission(permissions.content[content.type].update)
+    """
+
+    def permission_checker(*permissions: str) -> bool:
+        if not check_permissions(master_granted, token, *permissions):
+            raise permission_denied(extra=dict(permissions=", ".join(permissions)))
+
+        return True
+
+    return permission_checker
+
+
 def require_page(page: int = Query(1, ge=1, description="№ Сторінки")):
     """Return page number provided by user"""
     return page
+
+
+not_found = scheme.define_error(
+    "content/composition/variant", "not-found", "Composition variant not found", 404
+)
+
+
+@not_found.mark
+async def require_composition_variant(
+    variant_id: int, session: AsyncSession = Depends(acquire_session)
+) -> CompositionVariant:
+    variant = await service.get_composition_variant(session, variant_id)
+    if variant is None:
+        raise not_found
+
+    return variant
+
+
+not_found = scheme.define_error("content/volume", "not-found", "Volume not found", 404)
+
+
+@not_found.mark
+async def require_volume(
+    volume_id: int, session: AsyncSession = Depends(acquire_session)
+) -> Volume:
+    volume = await service.get_volume(session, volume_id)
+    if volume is None:
+        raise not_found
+
+    return volume
+
+
+not_found = scheme.define_error("content/chapter", "not-found", "Chapter not found", 404)
+
+
+@not_found.mark
+async def require_chapter(
+    chapter_id: int, session: AsyncSession = Depends(acquire_session)
+) -> Chapter:
+    chapter = await service.get_chapter(session, chapter_id)
+    if chapter is None:
+        raise not_found
+
+    return chapter
+
+
+def file_mime(file: UploadFile) -> str:
+    return puremagic.from_stream(file.file, True, file.filename)

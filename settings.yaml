@@ -1,5 +1,8 @@
 cdn:
   url_format: https://cdn.nyam.online/{key}
+  key_format:
+    avatar: "avatars/{nickname}-{hex}{ext}"
+    page: "pages/{chapter_id}-{hex}{ext}"
 
 bot:
   headers:

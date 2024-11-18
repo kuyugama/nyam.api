@@ -2,8 +2,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.models import Composition, UploadImage
+from src import constants
+from src.models import Composition, UploadImage, CompositionVariant, User
 from src.content_providers import ContentProviderComposition
+from src.routes.content.composition.scheme import CreateCompositionVariantBody
 
 
 async def get_composition_by_slug(session: AsyncSession, slug: str) -> Composition:
@@ -50,3 +52,21 @@ async def publish_composition_from_provider(
     await session.commit()
 
     return composition
+
+
+async def publish_composition_variant(
+    session: AsyncSession, origin: Composition, body: CreateCompositionVariantBody, author: User
+) -> CompositionVariant:
+    variant = CompositionVariant(
+        origin=origin,
+        author=author,
+        status=constants.STATUS_COMPOSITION_VARIANT_PENDING,
+        title_local=body.title,
+        synopsis_local=body.synopsis,
+    )
+
+    session.add(variant)
+
+    await session.commit()
+
+    return variant

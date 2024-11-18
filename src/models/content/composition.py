@@ -2,12 +2,12 @@ from datetime import datetime
 
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy import String, ForeignKey, event, Connection
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, ForeignKey, event, Connection, update
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session, InstanceState
 
-from .base import Base
-from .user import User
-from .image import UploadImage
+from src.models.base import Base
+from src.models.user import User
+from src.models.image import UploadImage
 
 
 class Composition(Base):
@@ -72,8 +72,8 @@ class CompositionVariant(Base):
     synopsis_local: Mapped[str] = mapped_column(index=True, nullable=True)
 
     # Cached fields
-    chapters: Mapped[int] = mapped_column(index=True)
-    volumes: Mapped[int] = mapped_column(index=True)
+    chapters: Mapped[int] = mapped_column(index=True, default=0)
+    volumes: Mapped[int] = mapped_column(index=True, default=0)
 
     @property
     def title(self) -> str | None:
@@ -85,10 +85,18 @@ class CompositionVariant(Base):
 
 
 @event.listens_for(CompositionVariant, "before_insert")
-def _new_variant(_: type[CompositionVariant], __: Connection, target: CompositionVariant):
-    target.origin.variants += 1
+def _new_variant(_: type[CompositionVariant], connection: Connection, variant: CompositionVariant):
+    variant.origin.variants += 1
+    connection.execute(
+        update(Composition).values(variants=variant.origin.variants).filter_by(id=variant.origin_id)
+    )
 
 
 @event.listens_for(CompositionVariant, "before_delete")
-def _new_variant(_: type[CompositionVariant], __: Connection, target: CompositionVariant):
-    target.origin.variants -= 1
+def _remove_variant(
+    _: type[CompositionVariant], connection: Connection, variant: CompositionVariant
+):
+    variant.origin.variants -= 1
+    connection.execute(
+        update(Composition).values(variants=variant.origin.variants).filter_by(id=variant.origin_id)
+    )

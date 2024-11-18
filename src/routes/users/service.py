@@ -69,15 +69,15 @@ async def update_user_avatar(
         if mime == "image/png":
             file = compress_png(
                 upload_file.file,
-                constants.MAX_AVATAR_WIDTH,
-                constants.MAX_AVATAR_HEIGHT,
+                constants.AVATAR_MAX_WIDTH,
+                constants.AVATAR_MAX_HEIGHT,
             )
             mime = "image/webp"
         else:
             file = filter_image_size(
                 upload_file.file,
-                constants.MAX_AVATAR_WIDTH,
-                constants.MAX_AVATAR_HEIGHT,
+                constants.AVATAR_MAX_WIDTH,
+                constants.AVATAR_MAX_HEIGHT,
             )
 
         width, height = Image.open(file).size
@@ -95,7 +95,7 @@ async def update_user_avatar(
 
         await session.delete(avatar)
 
-    key = "{nickname}/avatar-{hex}{ext}".format(
+    key = settings.cdn.key_format.avatar.format(
         nickname=user.nickname,
         hex=secrets.token_hex(8),
         ext=mimetypes.guess_extension(mime),
@@ -104,9 +104,7 @@ async def update_user_avatar(
     await upload_file_obj(file, key, mime)
 
     avatar = UploadImage(
-        url=settings.cdn.url_format.format(
-            key=key,
-        ),
+        url=settings.cdn.url_format.format(key=key),
         width=width,
         height=height,
         mime_type=mime,
