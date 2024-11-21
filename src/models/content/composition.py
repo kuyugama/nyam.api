@@ -2,12 +2,13 @@ from datetime import datetime
 
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy import String, ForeignKey, event, Connection, update
-from sqlalchemy.orm import Mapped, mapped_column, relationship, Session, InstanceState
+from sqlalchemy import String, ForeignKey, event, Connection
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base
 from src.models.user import User
 from src.models.image import UploadImage
+from src.util import update_within_flush_event
 
 
 class Composition(Base):
@@ -86,17 +87,11 @@ class CompositionVariant(Base):
 
 @event.listens_for(CompositionVariant, "before_insert")
 def _new_variant(_: type[CompositionVariant], connection: Connection, variant: CompositionVariant):
-    variant.origin.variants += 1
-    connection.execute(
-        update(Composition).values(variants=variant.origin.variants).filter_by(id=variant.origin_id)
-    )
+    update_within_flush_event(variant.origin, connection, variants=variant.origin.variants + 1)
 
 
 @event.listens_for(CompositionVariant, "before_delete")
 def _remove_variant(
     _: type[CompositionVariant], connection: Connection, variant: CompositionVariant
 ):
-    variant.origin.variants -= 1
-    connection.execute(
-        update(Composition).values(variants=variant.origin.variants).filter_by(id=variant.origin_id)
-    )
+    update_within_flush_event(variant.origin, connection, variants=variant.origin.variants - 1)

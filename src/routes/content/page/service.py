@@ -11,11 +11,7 @@ def page_filters(query: Select, chapter_id: int):
 
 def page_options(query: Select, model: type[TextPage | ImagePage]):
     if model is ImagePage:
-        query = query.options(
-            joinedload(
-                ImagePage.image
-            )
-        )
+        query = query.options(joinedload(ImagePage.image))
     return query
 
 

@@ -18,12 +18,14 @@ from .string_util import verify_payload
 from .string_util import camel_to_snake
 from .pydantic_util import format_error
 from .datetime_util import utc_timestamp
+from .sqlalchemy_util import update_by_pk
 from .image_util import filter_image_size
 from .fastapi_util import setup_route_errors
 from .fastapi_util import route_has_dependency
 from .permissions_util import check_permissions
 from .permissions_util import permission_registry
 from .fastapi_util import render_route_permissions
+from .sqlalchemy_util import update_within_flush_event
 
 
 __all__ = [
@@ -35,6 +37,7 @@ __all__ = [
     "secure_hash",
     "compress_png",
     "consists_of",
+    "update_by_pk",
     "format_error",
     "utc_timestamp",
     "camel_to_snake",
@@ -48,6 +51,7 @@ __all__ = [
     "route_has_dependency",
     "get_offset_and_limit",
     "render_route_permissions",
+    "update_within_flush_event",
 ]
 
 

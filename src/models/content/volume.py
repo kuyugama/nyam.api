@@ -1,9 +1,9 @@
 from sqlalchemy import ForeignKey, event, Connection
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import update
 
 from ..base import Base
 from .composition import CompositionVariant
+from src.util import update_within_flush_event
 
 
 class Volume(Base):
@@ -26,19 +26,9 @@ class Volume(Base):
 
 @event.listens_for(Volume, "before_insert")
 def _new_volume(_: type[Volume], connection: Connection, volume: Volume):
-    volume.variant.volumes += 1
-    connection.execute(
-        update(CompositionVariant)
-        .values(volumes=volume.variant.volumes)
-        .filter_by(id=volume.variant_id)
-    )
+    update_within_flush_event(volume.variant, connection, volumes=volume.variant.volumes + 1)
 
 
 @event.listens_for(Volume, "before_delete")
 def _remove_volume(_: type[Volume], connection: Connection, volume: Volume):
-    volume.variant.volumes -= 1
-    connection.execute(
-        update(CompositionVariant)
-        .values(volumes=volume.variant.volumes)
-        .filter_by(id=volume.variant_id)
-    )
+    update_within_flush_event(volume.variant, connection, volumes=volume.variant.volumes - 1)

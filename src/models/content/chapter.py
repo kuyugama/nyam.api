@@ -1,9 +1,10 @@
-from sqlalchemy import ForeignKey, event, Connection, update
+from sqlalchemy import ForeignKey, event, Connection
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from ..base import Base
 from .volume import Volume
 from .composition import CompositionVariant
+from src.util import update_within_flush_event, update_by_pk
 
 
 class Chapter(Base):
@@ -26,27 +27,21 @@ class Chapter(Base):
 
 @event.listens_for(Chapter, "before_insert")
 def _new_chapter(_: type[Chapter], connection: Connection, chapter: Chapter):
-    chapter.volume.chapters += 1
+    update_within_flush_event(chapter.volume, connection, chapters=chapter.volume.chapters + 1)
 
     connection.execute(
-        update(Volume).values(chapters=chapter.volume.chapters).filter_by(id=chapter.volume_id)
-    )
-    connection.execute(
-        update(CompositionVariant)
-        .values(chapters=CompositionVariant.chapters + 1)
-        .filter_by(id=chapter.volume.variant_id)
+        update_by_pk(
+            CompositionVariant, chapter.volume.variant_id, chapters=CompositionVariant.chapters + 1
+        )
     )
 
 
 @event.listens_for(Chapter, "before_delete")
 def _remove_chapter(_: type[Chapter], connection: Connection, chapter: Chapter):
-    chapter.volume.chapters -= 1
+    update_within_flush_event(chapter.volume, connection, chapters=chapter.volume.chapters + 1)
 
     connection.execute(
-        update(Volume).values(chapters=chapter.volume.chapters).filter_by(id=chapter.volume_id)
-    )
-    connection.execute(
-        update(CompositionVariant)
-        .values(chapters=CompositionVariant.chapters + 1)
-        .filter_by(id=chapter.volume.variant_id)
+        update_by_pk(
+            CompositionVariant, chapter.volume.variant_id, chapters=CompositionVariant.chapters - 1
+        )
     )

@@ -1,10 +1,11 @@
-from sqlalchemy import ForeignKey, event, Connection, update
+from sqlalchemy import ForeignKey, event, Connection
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from ..base import Base
 from src import constants
 from .chapter import Chapter
 from ..image import UploadImage
+from src.util import update_within_flush_event
 
 
 class BasePage(Base):
@@ -35,17 +36,9 @@ class TextPage(BasePage):
 
 @event.listens_for(BasePage, "before_insert")
 def _new_page(_: type[BasePage], connection: Connection, page: BasePage):
-    page.chapter.pages += 1
-
-    connection.execute(
-        update(Chapter).values(pages=page.chapter.pages).filter_by(id=page.chapter_id)
-    )
+    update_within_flush_event(page.chapter, connection, pages=page.chapter.pages + 1)
 
 
 @event.listens_for(BasePage, "before_delete")
 def _remove_page(_: type[BasePage], connection: Connection, page: BasePage):
-    page.chapter.pages -= 1
-
-    connection.execute(
-        update(Chapter).values(pages=page.chapter.pages).filter_by(id=page.chapter_id)
-    )
+    update_within_flush_event(page.chapter, connection, pages=page.chapter.pages - 1)

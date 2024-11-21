@@ -27,13 +27,7 @@ def variants_options(query: Select) -> Select:
 
 
 async def count_variants(session: AsyncSession, slug: str) -> int:
-    return await session.scalar(
-        select(
-            Composition.variants
-        ).filter(
-            Composition.slug == slug
-        )
-    )
+    return await session.scalar(select(Composition.variants).filter(Composition.slug == slug))
 
 
 async def list_variants(
