@@ -31,10 +31,9 @@ async def list_volumes(
 ):
     offset, limit = get_offset_and_limit(page)
 
-    total = await service.count_volumes(session, variant.id)
     items = await service.list_volumes(session, variant.id, offset, limit)
 
-    return paginated_response(items.all(), total, page, limit)
+    return paginated_response(items.all(), variant.volumes, page, limit)
 
 
 @router.get(

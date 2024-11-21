@@ -81,7 +81,7 @@ async def validate_image_page_index(
 @image_too_big.mark
 @mime_invalid.mark
 @type_invalid.mark
-async def validate_publish_image_page(
+async def validate_image_page_file(
     file: UploadFile = File(description="Зображення сторінки"),
     mime: str = Depends(file_mime),
     variant: CompositionVariant = Depends(chapter_composition_variant),

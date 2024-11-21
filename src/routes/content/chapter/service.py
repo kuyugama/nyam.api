@@ -4,22 +4,21 @@ import secrets
 from PIL import Image
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import UploadFile
-from sqlalchemy import Select, select, func, ScalarResult, update
+from sqlalchemy import Select, select, ScalarResult
 
 from config import settings
 from src.models import (
     Volume,
     Chapter,
     TextPage,
-    BasePage,
     ImagePage,
     UploadImage,
     CompositionVariant,
 )
 
 from src.scheme import APIError
-from src.service import get_composition_variant_by_chapter_id
 from src.util import upload_file_obj
+from src.service import get_composition_variant_by_chapter_id
 
 
 def chapter_filters(query: Select, volume_id: int):
@@ -28,10 +27,6 @@ def chapter_filters(query: Select, volume_id: int):
 
 def chapter_options(query: Select):
     return query
-
-
-async def count_chapters(session: AsyncSession, volume_id: int):
-    return await session.scalar(chapter_filters(select(func.count(Chapter.id)), volume_id))
 
 
 async def list_chapters(

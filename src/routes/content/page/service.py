@@ -1,4 +1,4 @@
-from sqlalchemy import Select, select, func, ScalarResult
+from sqlalchemy import Select, select, ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -17,10 +17,6 @@ def page_options(query: Select, model: type[TextPage | ImagePage]):
             )
         )
     return query
-
-
-async def count_pages(session: AsyncSession, chapter_id: int):
-    return await session.scalar(page_filters(select(func.count(BasePage.id)), chapter_id))
 
 
 async def list_pages(

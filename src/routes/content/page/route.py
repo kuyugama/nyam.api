@@ -35,7 +35,6 @@ async def list_pages(
 
     model = IMAGE_TYPE_TO_MODEL[constants.COMPOSITION_STYLE_TO_PAGE_TYPE[variant.origin.style]]
 
-    total = await service.count_pages(session, chapter.id)
     items = await service.list_pages(session, chapter.id, offset, limit, model)
 
-    return paginated_response(items.all(), total, page, limit)
+    return paginated_response(items.all(), chapter.pages, page, limit)

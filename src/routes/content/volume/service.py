@@ -12,10 +12,6 @@ def volume_options(query: Select):
     return query
 
 
-async def count_volumes(session: AsyncSession, variant_id: int):
-    return await session.scalar(volume_filters(select(func.count(Volume.id)), variant_id))
-
-
 async def list_volumes(
     session: AsyncSession, variant_id: int, offset: int, limit: int
 ) -> ScalarResult[Volume]:
