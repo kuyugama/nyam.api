@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from . import service
 from src import permissions
 from src.models import Composition
+from src.util import PermissionChecker
 from src.database import acquire_session
 from ..dependencies import require_provider
 from src.scheme import define_error_category
@@ -54,7 +55,7 @@ async def require_composition(
 async def validate_publish_variant(
     body: CreateCompositionVariantBody,
     origin: Composition = Depends(require_composition),
-    has_permission=Depends(interactive_require_permissions),
+    has_permission: PermissionChecker = interactive_require_permissions,
 ):
     has_permission(permissions.content[origin.style].update)
 

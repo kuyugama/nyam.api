@@ -1,11 +1,12 @@
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, Select, func, ScalarResult, text, String
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import constants
-from src.models import Composition, UploadImage, CompositionVariant, User
 from src.content_providers import ContentProviderComposition
-from src.routes.content.composition.scheme import CreateCompositionVariantBody
+from .scheme import CreateCompositionVariantBody, CompositionListBody
+from src.models import Composition, UploadImage, CompositionVariant, User
 
 
 async def get_composition_by_slug(session: AsyncSession, slug: str) -> Composition:
@@ -70,3 +71,72 @@ async def publish_composition_variant(
     await session.commit()
 
     return variant
+
+
+def compositions_filters(query: Select, body: CompositionListBody):
+    if body.genres is not None:
+        query = query.filter(
+            func.jsonb_path_exists(
+                Composition.genres,
+                text("'$[*] ? (@.name_en == $genre || @.name_uk == $genre)'"),
+                func.jsonb_build_object("genre", func.cast(body.genres, ARRAY(String))),
+            )
+        )
+
+    if body.genres_exclude is not None:
+        query = query.filter(
+            ~func.jsonb_path_exists(
+                Composition.genres,
+                text("'$[*] ? (@.name_en == $genre || @.name_uk == $genre)'"),
+                func.jsonb_build_object("genre", func.cast(body.genres_exclude, ARRAY(String))),
+            )
+        )
+
+    if body.tags is not None:
+        query = query.filter(Composition.tags.op("<@")(body.tags))
+
+    if body.tags_exclude is not None:
+        query = query.filter(Composition.tags.op("<>")(body.tags_exclude))
+
+    if body.nsfw is not None:
+        query = query.filter(Composition.nsfw == body.nsfw)
+
+    if body.years is not None:
+        query = query.filter(
+            Composition.year >= body.years[0],
+            Composition.year <= body.years[1],
+        )
+
+    if body.chapters is not None:
+        query = query.filter(
+            Composition.chapters >= body.chapters[0],
+            Composition.chapters <= body.chapters[1],
+        )
+
+    if body.volumes is not None:
+        query = query.filter(
+            Composition.volumes >= body.volumes[0],
+            Composition.volumes <= body.volumes[1],
+        )
+
+    return query
+
+
+def compositions_options(query: Select):
+    return query.options(
+        joinedload(Composition.preview),
+    )
+
+
+async def count_compositions(session: AsyncSession, body: CompositionListBody) -> int:
+    return await session.scalar(compositions_filters(select(func.count(Composition.id)), body))
+
+
+async def list_compositions(
+    session: AsyncSession, body: CompositionListBody, offset: int, limit: int
+) -> ScalarResult[Composition]:
+    return await session.scalars(
+        compositions_options(
+            compositions_filters(select(Composition).offset(offset).limit(limit), body)
+        )
+    )

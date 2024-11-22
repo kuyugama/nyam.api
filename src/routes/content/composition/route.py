@@ -7,14 +7,21 @@ from src import scheme, permissions
 from src.models import Composition, Token
 from src.database import acquire_session
 from ..dependencies import require_provider
-from .scheme import CreateCompositionVariantBody
-from src.dependencies import require_token, require_permissions
+from .scheme import CreateCompositionVariantBody, CompositionListBody
+from src.util import paginated_response, get_offset_and_limit, UseCache
 from src.content_providers import SearchEntry, BaseContentProvider, ContentProviderComposition
 
 from .dependencies import (
     require_composition,
     validate_publish_variant,
     require_provider_composition,
+)
+from src.dependencies import (
+    require_page,
+    require_token,
+    require_use_cache,
+    require_drop_cache,
+    require_permissions,
 )
 
 router = APIRouter(prefix="/composition")
@@ -39,6 +46,7 @@ async def get_search_provider(
     summary="Опублікувати твір використовуючи інформацію з провайдера контенту",
     response_model=scheme.Composition,
     operation_id="publish_composition_from_provider",
+    dependencies=[require_drop_cache("composition")],
 )
 async def publish_composition_from_provider(
     provider_composition: ContentProviderComposition = Depends(require_provider_composition),
@@ -55,6 +63,26 @@ async def publish_composition_from_provider(
 )
 async def get_composition(composition: Composition = Depends(require_composition)):
     return composition
+
+
+@router.post(
+    "/list",
+    summary="Отримати список творів",
+    response_model=scheme.Paginated[scheme.Composition],
+    operation_id="list_composition",
+)
+async def list_compositions(
+    body: CompositionListBody,
+    session: AsyncSession = Depends(acquire_session),
+    use_cache: UseCache = require_use_cache("composition"),
+    page: int = Depends(require_page),
+):
+    offset, limit = get_offset_and_limit(page)
+
+    total = await use_cache(body.cache_key(), service.count_compositions(session, body))
+    items = await service.list_compositions(session, body, offset, limit)
+
+    return paginated_response(items.all(), total, page, limit)
 
 
 @router.post(

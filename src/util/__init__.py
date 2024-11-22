@@ -14,6 +14,7 @@ from .string_util import secure_hash
 from .string_util import consists_of
 from .s3_util import upload_file_obj
 from .fastapi_util import has_errors
+from .hash_util import cache_key_hash
 from .string_util import verify_payload
 from .string_util import camel_to_snake
 from .pydantic_util import format_error
@@ -31,6 +32,7 @@ from .sqlalchemy_util import update_within_flush_event
 __all__ = [
     "now",
     "slugify",
+    "UseCache",
     "file_size",
     "has_errors",
     "delete_obj",
@@ -40,9 +42,11 @@ __all__ = [
     "update_by_pk",
     "format_error",
     "utc_timestamp",
+    "cache_key_hash",
     "camel_to_snake",
     "verify_payload",
     "upload_file_obj",
+    "PermissionChecker",
     "filter_image_size",
     "check_permissions",
     "setup_route_errors",
@@ -73,3 +77,16 @@ def paginated_response(
             "pages": math.ceil(total / limit),
         },
     }
+
+
+T = typing.TypeVar("T")
+
+
+class UseCache(typing.Protocol):
+    @staticmethod
+    async def __call__(cache_key: tuple[typing.Any, ...], coro: typing.Awaitable[T]) -> T: ...
+
+
+class PermissionChecker(typing.Protocol):
+    @staticmethod
+    def __call__(*permissions: str): ...

@@ -1,10 +1,12 @@
+import warnings
 from functools import lru_cache
 
 import puremagic
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Header, Query, Depends, BackgroundTasks, params, Request, UploadFile
+from fastapi import Header, Query, Depends, BackgroundTasks, params, Request, UploadFile, FastAPI
 
 from config import settings
+from .util import cache_key_hash
 from . import service, scheme, util
 from src.database import session_holder, acquire_session
 from .models import Token, CompositionVariant, Volume, Chapter
@@ -153,6 +155,7 @@ def require_permissions(*permissions: str) -> params.Depends:
 
 
 @permission_denied.mark
+@lru_cache
 def interactive_require_permissions(
     master_granted: bool = Depends(master_grant), token: Token | None = Depends(optional_token)
 ):
@@ -173,7 +176,7 @@ def interactive_require_permissions(
 
     Example:
     ::
-        async def dependency(check_permission = Depends(interactive_require_permissions)):
+        async def dependency(check_permission = interactive_require_permissions):
             content = await service.get_content(...)
             check_permission(permissions.content[content.type].update)
     """
@@ -184,7 +187,7 @@ def interactive_require_permissions(
 
         return True
 
-    return permission_checker
+    return Depends(permission_checker)
 
 
 def require_page(page: int = Query(1, ge=1, description="№ Сторінки")):
@@ -238,3 +241,61 @@ async def require_chapter(
 
 def file_mime(file: UploadFile) -> str:
     return puremagic.from_stream(file.file, True, file.filename)
+
+
+@lru_cache
+def require_use_cache(key: str):
+    """
+    Dependency generates function to save result of coroutines using cache key
+
+    :param key: cache context key (can be used to drop cache)
+    :return: (tuple<Any, ...>, Awaitable<T>) -> Awaitable<T>
+    """
+
+    def dependency(request: Request):
+        # Ignore not awaited coroutines
+        warnings.simplefilter("ignore", RuntimeWarning)
+
+        app: FastAPI = request.scope["app"]
+
+        if not hasattr(app, "user_cache"):
+            app.user_cache = {}
+
+        cache = app.user_cache.setdefault(key, {})
+
+        async def use_cache(cache_key, coro):
+            nonlocal cache
+            key = cache_key_hash(cache_key)
+
+            if key in cache:
+                return cache[key]
+
+            return cache.setdefault(key, await coro)
+
+        yield use_cache
+
+    return Depends(dependency)
+
+
+@lru_cache
+def require_drop_cache(key: str):
+    """
+    Drop all cache at specified key
+    """
+
+    def dependency(request: Request):
+        app: FastAPI = request.scope["app"]
+        if not hasattr(app, "user_cache"):
+            app.user_cache = {}
+
+        cache = app.user_cache.setdefault(key, {})
+
+        async def drop_cache():
+            cache.clear()
+
+        yield drop_cache
+
+        if cache:
+            cache.clear()
+
+    return Depends(dependency)

@@ -1,7 +1,10 @@
+import sys
 import copy
+import inspect
 import hashlib
 import secrets
 from typing import Any
+from pathlib import Path
 from datetime import timedelta, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -148,9 +151,12 @@ def assert_contain(source: dict[str, Any], **kw):
     for name, value in kw.items():
         actual_value = source.get(name)
         if actual_value != value:
-            print("[-] assert_contain call:")
-            print("[+] Name:", name)
-            print("[+] Actual value:", actual_value)
-            print("[+] Expected value:", value)
-            print("[-] assert_contain call end")
+            frame = inspect.stack()[1]
+            file_path = Path(frame.filename)
+            rel_path = file_path.relative_to(sys.path[0])
+            print(
+                f"{rel_path}:{frame.lineno} => {frame.function}",
+                f"  {name} -> {actual_value!r} != {value!r}",
+                sep="\n",
+            )
         assert actual_value == value
