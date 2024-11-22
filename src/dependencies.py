@@ -155,7 +155,6 @@ def require_permissions(*permissions: str) -> params.Depends:
 
 
 @permission_denied.mark
-@lru_cache
 def interactive_require_permissions(
     master_granted: bool = Depends(master_grant), token: Token | None = Depends(optional_token)
 ):
@@ -187,7 +186,7 @@ def interactive_require_permissions(
 
         return True
 
-    return Depends(permission_checker)
+    return permission_checker
 
 
 def require_page(page: int = Query(1, ge=1, description="№ Сторінки")):

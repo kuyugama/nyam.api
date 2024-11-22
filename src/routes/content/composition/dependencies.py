@@ -55,7 +55,7 @@ async def require_composition(
 async def validate_publish_variant(
     body: CreateCompositionVariantBody,
     origin: Composition = Depends(require_composition),
-    has_permission: PermissionChecker = interactive_require_permissions,
+    has_permission: PermissionChecker = Depends(interactive_require_permissions)
 ):
     has_permission(permissions.content[origin.style].update)
 
