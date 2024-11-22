@@ -1,3 +1,4 @@
+import sys
 import inspect
 from datetime import timedelta
 from functools import lru_cache, wraps, partial
@@ -6,12 +7,17 @@ import dramatiq
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from ua_parser import user_agent_parser
+from dramatiq.brokers.stub import StubBroker
 from dramatiq.brokers.redis import RedisBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
 
-broker = RedisBroker(url=settings.redis.url)
+if "pytest" not in sys.modules:
+    broker = RedisBroker(url=settings.redis.url)
+else:
+    broker = StubBroker()
+
 broker.add_middleware(dramatiq.middleware.asyncio.AsyncIO())
 dramatiq.set_broker(broker)
 write = partial(print, "[+]")
