@@ -7,8 +7,11 @@ async def test_none(client):
     print(response.json())
     assert response.status_code == 404
 
-    assert response.json()["category"] == "content/composition/variant"
-    assert response.json()["code"] == "not-found"
+    assert_contain(
+        response.json(),
+        category="content/composition/variant",
+        code="not-found",
+    )
 
 
 async def test_normal(client, composition_variant):

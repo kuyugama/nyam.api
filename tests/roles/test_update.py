@@ -3,7 +3,7 @@ from src import permissions
 from tests import requests
 
 
-async def test_description(client, role_unverified, master_key):
+async def test_title(client, role_unverified, master_key):
     new_title = role_unverified.title + "-new"
     response = await requests.roles.update_role(
         client,
