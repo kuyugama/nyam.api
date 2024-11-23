@@ -34,7 +34,6 @@ def update_within_flush_event(object_: DeclarativeBase, connection: Connection, 
     for name, value in values.items():
         if not hasattr(object_, name):
             continue
-
         set_committed_value(object_, name, value)
         update_values[name] = value
 

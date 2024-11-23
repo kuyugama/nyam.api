@@ -48,10 +48,10 @@ async def get_volume(volume: Volume = Depends(require_volume)):
 
 @router.post(
     "/{volume_id}/chapter",
-    summary="Створити розділ варіанту твору",
+    summary="Створити розділ тому",
     operation_id="create_chapter",
     response_model=scheme.Chapter,
-    dependencies=[require_permissions(permissions.chapter.create, permissions.volume.update)],
+    dependencies=[require_permissions(permissions.chapter.create)],
 )
 async def create_chapter(
     body: CreateChapterBody = Depends(validate_create_chapter),

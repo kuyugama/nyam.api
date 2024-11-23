@@ -5,8 +5,26 @@ from sqlalchemy import select, delete, func, update
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Token, User, Role, CompositionVariant, Composition, Volume, Chapter, BasePage
 from src.util import now
+from src import constants
+from src.models import (
+    Role,
+    User,
+    Token,
+    Volume,
+    Chapter,
+    BasePage,
+    TextPage,
+    ImagePage,
+    Composition,
+    CompositionVariant,
+)
+
+
+IMAGE_TYPE_TO_MODEL = {
+    constants.PAGE_TEXT: TextPage,
+    constants.PAGE_IMAGE: ImagePage,
+}
 
 
 async def get_token(session: AsyncSession, body: str) -> Token | None:
@@ -77,6 +95,29 @@ async def get_volume(session: AsyncSession, volume_id: int) -> Volume:
 
 async def get_chapter(session: AsyncSession, chapter_id: int) -> Chapter:
     return await session.scalar(select(Chapter).filter_by(id=chapter_id))
+
+
+async def get_page(session: AsyncSession, page_id: int) -> TextPage | ImagePage | None:
+    style = await session.scalar(
+        select(Composition.style).filter(
+            Composition.id == CompositionVariant.origin_id,  # type: ignore
+            CompositionVariant.id == Volume.variant_id,  # type: ignore
+            Volume.id == Chapter.volume_id,  # type: ignore
+            Chapter.id == BasePage.chapter_id,  # type: ignore
+            BasePage.id == page_id,  # type: ignore
+        )
+    )
+
+    if not style:
+        return None
+
+    model = IMAGE_TYPE_TO_MODEL[constants.COMPOSITION_STYLE_TO_PAGE_TYPE[style]]
+
+    options = ()
+    if model is ImagePage:
+        options = (joinedload(ImagePage.image),)
+
+    return await session.scalar(select(model).filter(model.id == page_id).options(*options))  # type: ignore
 
 
 async def get_next_index(

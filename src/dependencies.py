@@ -23,6 +23,7 @@ _variant_not_found = scheme.define_error(
 )
 _volume_not_found = scheme.define_error("content/volume", "not-found", "Volume not found", 404)
 _chapter_not_found = scheme.define_error("content/chapter", "not-found", "Chapter not found", 404)
+_page_not_found = scheme.define_error("content/page", "not-found", "Page not found", 404)
 
 
 def client_details(request: Request) -> scheme.ClientInfo:
@@ -230,6 +231,15 @@ async def require_chapter(
         raise _chapter_not_found
 
     return chapter
+
+
+@_page_not_found.mark
+async def require_content_page(page_id: int, session: AsyncSession = Depends(acquire_session)):
+    page = await service.get_page(session, page_id)
+    if page is None:
+        raise _page_not_found
+
+    return page
 
 
 def file_mime(file: UploadFile) -> str:

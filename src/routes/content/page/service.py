@@ -23,5 +23,8 @@ async def list_pages(
     model: type[TextPage | ImagePage],
 ) -> ScalarResult[TextPage | ImagePage]:
     return await session.scalars(
-        page_filters(page_options(select(model).offset(offset).limit(limit), model), chapter_id)
+        page_filters(
+            page_options(select(model).order_by(model.index).offset(offset).limit(limit), model),
+            chapter_id,
+        )
     )

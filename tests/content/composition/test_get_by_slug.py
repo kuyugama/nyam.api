@@ -9,7 +9,7 @@ async def test_none(client):
 
     assert_contain(
         response.json(),
-        code="composition-not-found",
+        code="not-found",
         category="content/composition",
     )
 

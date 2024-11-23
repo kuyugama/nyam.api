@@ -3,9 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Chapter, Volume
 from . import service
-from src import scheme
+from src import scheme, permissions
 from src.database import acquire_session
-from src.dependencies import require_page, require_chapter, file_mime, require_volume
+from src.dependencies import (
+    require_page,
+    require_chapter,
+    file_mime,
+    require_volume,
+    require_permissions,
+)
 from src.util import get_offset_and_limit, paginated_response
 from .dependencies import (
     validate_publish_text_page,
@@ -51,7 +57,10 @@ async def get_chapter(chapter: Chapter = Depends(require_chapter)):
     summary="Опублікувати текстову сторінку до розділу",
     operation_id="publish_text_page",
     response_model=scheme.TextPage,
-    dependencies=[Depends(validate_publish_image_permissions)],
+    dependencies=[
+        Depends(validate_publish_image_permissions),
+        require_permissions(permissions.page_text.create),
+    ],
 )
 async def publish_text_page(
     chapter: Chapter = Depends(require_chapter),
@@ -66,7 +75,10 @@ async def publish_text_page(
     summary="Опублікувати сторінку із зображення до розділу",
     operation_id="publish_image_page",
     response_model=scheme.ImagePage,
-    dependencies=[Depends(validate_publish_image_permissions)],
+    dependencies=[
+        Depends(validate_publish_image_permissions),
+        require_permissions(permissions.page_image.create),
+    ],
 )
 async def publish_image_page(
     mime: str = Depends(file_mime),

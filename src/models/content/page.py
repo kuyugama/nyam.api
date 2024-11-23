@@ -34,11 +34,13 @@ class TextPage(BasePage):
     __mapper_args__ = {"polymorphic_identity": constants.PAGE_TEXT}
 
 
-@event.listens_for(BasePage, "before_insert")
+@event.listens_for(ImagePage, "before_insert")
+@event.listens_for(TextPage, "before_insert")
 def _new_page(_: type[BasePage], connection: Connection, page: BasePage):
     update_within_flush_event(page.chapter, connection, pages=page.chapter.pages + 1)
 
 
-@event.listens_for(BasePage, "before_delete")
+@event.listens_for(ImagePage, "before_delete")
+@event.listens_for(TextPage, "before_delete")
 def _remove_page(_: type[BasePage], connection: Connection, page: BasePage):
     update_within_flush_event(page.chapter, connection, pages=page.chapter.pages - 1)

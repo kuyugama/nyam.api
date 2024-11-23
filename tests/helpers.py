@@ -13,7 +13,19 @@ import src
 import src.permissions
 from src import util, constants
 from src.util import now, secure_hash
-from src.models import User, Token, Role, Composition, Genre, CompositionVariant
+from src.models import (
+    User,
+    Token,
+    Role,
+    Composition,
+    Genre,
+    CompositionVariant,
+    Volume,
+    Chapter,
+    TextPage,
+    UploadImage,
+    ImagePage,
+)
 
 
 class MockedResponse:
@@ -109,7 +121,7 @@ async def create_composition(
     volumes: int | None = None,
     mal_id: int | None = None,
     style: str = constants.STYLE_COMPOSITION_MANGA,
-):
+) -> Composition:
     if genres is None:
         genres = []
 
@@ -153,7 +165,7 @@ async def create_composition_variant(
     author: User,
     title: str = None,
     synopsis: str | None = None,
-):
+) -> CompositionVariant:
     variant = CompositionVariant(
         origin=origin,
         title_local=title,
@@ -171,7 +183,7 @@ async def create_composition_variant(
 
 async def create_genre(
     session: AsyncSession, name_en: str = "Drama", name_uk: str = "Драма", slug: str = "drama"
-):
+) -> Genre:
     genre = Genre(name_uk=name_uk, name_en=name_en, slug=slug)
 
     session.add(genre)
@@ -179,6 +191,82 @@ async def create_genre(
     await session.commit()
 
     return genre
+
+
+async def create_volume(
+    session: AsyncSession, composition_variant: CompositionVariant, index: int, title: str = None
+) -> Volume:
+    volume = Volume(
+        variant=composition_variant,
+        title=title,
+        index=index,
+    )
+
+    session.add(volume)
+
+    await session.commit()
+
+    return volume
+
+
+async def create_chapter(
+    session: AsyncSession, volume: Volume, index: int, title: str = None
+) -> Chapter:
+    chapter = Chapter(
+        volume=volume,
+        title=title,
+        index=index,
+    )
+
+    session.add(chapter)
+
+    await session.commit()
+
+    return chapter
+
+
+async def create_text_page(
+    session: AsyncSession, chapter: Chapter, index: int, text: str
+) -> TextPage:
+    page = TextPage(
+        chapter=chapter,
+        index=index,
+        text=text,
+    )
+
+    session.add(page)
+
+    await session.commit()
+
+    return page
+
+
+async def create_image_page(
+    session: AsyncSession, chapter: Chapter, index: int, image: UploadImage
+) -> ImagePage:
+    page = ImagePage(chapter=chapter, index=index, image=image)
+
+    session.add(page)
+
+    await session.commit()
+
+    return page
+
+
+async def create_upload_image(session: AsyncSession) -> UploadImage:
+    image = UploadImage(
+        url="https://example.com/image.png",
+        width=720,
+        height=480,
+        mime_type="image/png",
+        key="example_upload/image.png",
+    )
+
+    session.add(image)
+
+    await session.commit()
+
+    return image
 
 
 def assert_contain(source: dict[str, Any], **kw):

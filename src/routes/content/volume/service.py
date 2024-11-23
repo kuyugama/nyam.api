@@ -16,7 +16,10 @@ async def list_volumes(
     session: AsyncSession, variant_id: int, offset: int, limit: int
 ) -> ScalarResult[Volume]:
     return await session.scalars(
-        volume_filters(volume_options(select(Volume).offset(offset).limit(limit)), variant_id)
+        volume_filters(
+            volume_options(select(Volume).order_by(Volume.index).offset(offset).limit(limit)),
+            variant_id,
+        )
     )
 
 

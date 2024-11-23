@@ -13,7 +13,6 @@ from src.content_providers import SearchEntry, BaseContentProvider, ContentProvi
 
 from .dependencies import (
     require_composition,
-    validate_publish_variant,
     require_provider_composition,
 )
 from src.dependencies import (
@@ -88,15 +87,12 @@ async def list_compositions(
 @router.post(
     "/{slug}/variant",
     summary="Опублікувати варіант твору",
-    description="""Увага! Прихована перевірка дозволів. 
-Вам необхідно мати право "content.{{composition.style}}.update" 
-для публікації варіанту твору""",
     response_model=scheme.CompositionVariant,
     operation_id="create_composition_variant",
     dependencies=[require_permissions(permissions.content_variant.create)],
 )
 async def publish_composition_variant(
-    body: CreateCompositionVariantBody = Depends(validate_publish_variant),
+    body: CreateCompositionVariantBody,
     author_token: Token = Depends(require_token),
     origin: Composition = Depends(require_composition),
     session: AsyncSession = Depends(acquire_session),

@@ -1,70 +1,70 @@
 from src.util.permissions_util import Permission
 
 
-class UserOwn(Permission):
+class _UserOwn(Permission):
     update_info: str
 
 
-class User(Permission):
-    own: UserOwn
+class _User(Permission):
+    own: _UserOwn
     update_info: str
     role_management: str
     permission_management: str
 
 
-user = User()
+user = _User()
 
 
-class ContentEntry(Permission):
+class _ContentEntry(Permission):
     publish: str
     delete: str
     update: str
 
 
-class Content(Permission):
-    manga: ContentEntry
-    manhwa: ContentEntry
-    manihwa: ContentEntry
-    ranobe: ContentEntry
+class _Content(Permission):
+    manga: _ContentEntry
+    manhwa: _ContentEntry
+    manihwa: _ContentEntry
+    ranobe: _ContentEntry
 
 
-content = Content()
+content = _Content()
 
 
-class ContentVariant(Permission):
+class _ContentVariant(Permission):
     create: str
     delete: str
     update: str
 
 
-content_variant = ContentVariant()
+content_variant = _ContentVariant()
 
 
-class Volume(Permission):
+class _Volume(Permission):
     create: str
     delete: str
     update: str
 
 
-volume = Volume()
+volume = _Volume()
 
 
-class Chapter(Permission):
+class _Chapter(Permission):
     create: str
     delete: str
     update: str
 
 
-chapter = Chapter()
+chapter = _Chapter()
 
 
-class Page(Permission):
+class _Page(Permission):
     create: str
     delete: str
     update: str
 
 
-page_text = Page("page-text")
-page_image = Page("page-image")
+page_text = _Page("page-text")
+page_image = _Page("page-image")
 
 override_author = Permission("override-author")

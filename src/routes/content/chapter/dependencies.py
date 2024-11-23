@@ -37,6 +37,7 @@ async def validate_publish_image_permissions(
     master_granted: bool = Depends(master_grant),
     variant: CompositionVariant = Depends(chapter_composition_variant),
 ):
+
     if variant.author_id != author_token.owner_id and not check_permissions(
         master_granted, author_token, permissions.override_author
     ):

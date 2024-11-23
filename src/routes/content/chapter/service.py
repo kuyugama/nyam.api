@@ -22,7 +22,7 @@ from src.service import get_composition_variant_by_chapter_id
 
 
 def chapter_filters(query: Select, volume_id: int):
-    return query.filter(Volume.variant_id == volume_id)
+    return query.filter(Chapter.volume_id == volume_id)
 
 
 def chapter_options(query: Select):
@@ -33,7 +33,10 @@ async def list_chapters(
     session: AsyncSession, volume_id: int, offset: int, limit: int
 ) -> ScalarResult[Volume]:
     return await session.scalars(
-        chapter_filters(chapter_options(select(Chapter).offset(offset).limit(limit)), volume_id)
+        chapter_filters(
+            chapter_options(select(Chapter).order_by(Chapter.index).offset(offset).limit(limit)),
+            volume_id,
+        )
     )
 
 

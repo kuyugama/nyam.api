@@ -9,9 +9,7 @@ async def test_no_origin(client, token_admin):
     )
     print(response.json())
     assert response.status_code == 404
-
-    assert response.json()["category"] == "content/composition"
-    assert response.json()["code"] == "composition-not-found"
+    assert_contain(response.json(), category="content/composition", code="not-found")
 
 
 async def test_normal(client, token_admin, composition):
