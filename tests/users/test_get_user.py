@@ -24,4 +24,3 @@ async def test_non_existent(client, user_regular):
         category="users",
         code="not-found",
     )
-

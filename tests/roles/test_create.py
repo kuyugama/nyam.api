@@ -82,5 +82,4 @@ async def test_no_master(client, master_key):
         response.json(),
         category="token",
         code="master-required",
-
     )

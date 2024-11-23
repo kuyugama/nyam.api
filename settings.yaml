@@ -1,3 +1,13 @@
+app:
+  title: "Ням API"
+  version: "0.0.1"
+
+contact: &contact
+  email: mail.kuyugama@gmail.com
+  telegram: https://t.me/kuyugama
+  instagram: https://instagram.com/kuyugama
+
+
 cdn:
   url_format: https://cdn.nyam.online/{key}
   key_format:
@@ -5,8 +15,19 @@ cdn:
     page: "pages/{chapter_id}-{hex}{ext}"
 
 bot:
-  headers:
-    X-Requester: https://manga.nyam.online/bot
+  image:
+    name: "Image metadata scraper bot"
+    description: "Bot scrapes image metadata(url, width, height, mimetype) from resource"
+    contact: *contact
+    headers:
+      X-requester: https://api.nyam.online/bot/image
+
+  composition:
+    name: "Composition scraper bot"
+    description: "Bot scrapes composition metadata from resource"
+    contact: *contact
+    headers:
+      X-Requester: https://api.nyam.online/bot/composition
 
 content_providers:
   hikka:
