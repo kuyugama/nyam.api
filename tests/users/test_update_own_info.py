@@ -43,11 +43,7 @@ async def test_empty(client, token_regular):
     print(response.json())
     assert response.status_code == 400
 
-    assert_contain(
-        response.json(),
-        category="users",
-        code="empty-update"
-    )
+    assert_contain(response.json(), category="users", code="empty-update")
 
 
 async def test_nothing_to_update(client, token_regular, user_regular):
@@ -61,8 +57,4 @@ async def test_nothing_to_update(client, token_regular, user_regular):
     print(response.json())
     assert response.status_code == 400
 
-    assert_contain(
-        response.json(),
-        category="users",
-        code="nothing-to-update"
-    )
+    assert_contain(response.json(), category="users", code="nothing-to-update")

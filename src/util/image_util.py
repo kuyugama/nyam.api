@@ -78,7 +78,7 @@ async def web_image_metadata(url: str, client: ClientSession = None) -> dict[str
 
     with TemporaryFile("w+b") as file:
         async with client:
-            resp = await client.get(url, headers=settings.bot.headers)
+            resp = await client.get(url, headers=settings.bot.image.headers)
 
             if resp.status != 200:
                 return None

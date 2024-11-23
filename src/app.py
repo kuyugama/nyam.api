@@ -87,6 +87,8 @@ def make_app(test_mode: bool = False) -> fastapi.FastAPI:
             {"name": "Ролі"},
             {"name": "default"},
         ],
+        title=config.settings.app.title,
+        version=config.settings.app.version,
     )
 
     router: APIRouter = getattr(app, "router")

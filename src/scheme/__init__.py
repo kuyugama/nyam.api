@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from .user import User
 from .role import Role
 from .token import Token
@@ -23,6 +25,7 @@ from .content_provider import ContentProvider
 
 
 __all__ = [
+    "Bot",
     "User",
     "Role",
     "Token",
@@ -46,3 +49,11 @@ __all__ = [
     "ValidationErrorModel",
     "define_error_category",
 ]
+
+
+class Bot(SchemeModel):
+    name: str = Field(description="The name of the bot")
+    description: str = Field(description="The description of the bot")
+    contact: dict[str, str] = Field(
+        description="Contact information of the owner", examples=[{"email": "<EMAIL>"}]
+    )
