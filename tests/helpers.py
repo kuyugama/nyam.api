@@ -13,7 +13,7 @@ import src
 import src.permissions
 from src import util, constants
 from src.util import now, secure_hash
-from src.models import User, Token, Role, Composition
+from src.models import User, Token, Role, Composition, Genre, CompositionVariant
 
 
 class MockedResponse:
@@ -147,6 +147,40 @@ async def create_composition(
     return composition
 
 
+async def create_composition_variant(
+    session: AsyncSession,
+    origin: Composition,
+    author: User,
+    title: str = None,
+    synopsis: str | None = None,
+):
+    variant = CompositionVariant(
+        origin=origin,
+        title_local=title,
+        synopsis_local=synopsis,
+        status=constants.STATUS_COMPOSITION_VARIANT_PENDING,
+        author=author,
+    )
+
+    session.add(variant)
+
+    await session.commit()
+
+    return variant
+
+
+async def create_genre(
+    session: AsyncSession, name_en: str = "Drama", name_uk: str = "Драма", slug: str = "drama"
+):
+    genre = Genre(name_uk=name_uk, name_en=name_en, slug=slug)
+
+    session.add(genre)
+
+    await session.commit()
+
+    return genre
+
+
 def assert_contain(source: dict[str, Any], **kw):
     for name, value in kw.items():
         actual_value = source.get(name)
@@ -160,3 +194,36 @@ def assert_contain(source: dict[str, Any], **kw):
                 sep="\n",
             )
         assert actual_value == value
+
+
+def assert_composition(source: dict[str, Any], composition: Composition):
+    assert_contain(
+        source,
+        title_uk=composition.title_uk,
+        title_en=composition.title_en,
+        title_original=composition.title_original,
+        title=composition.title,
+        synopsis_uk=composition.synopsis_uk,
+        synopsis_en=composition.synopsis_en,
+        synopsis=composition.synopsis,
+        genres=[
+            {
+                "name_uk": genre.name_uk,
+                "name_en": genre.name_en,
+                "slug": genre.slug,
+            }
+            for genre in composition.genres
+        ],
+        tags=composition.tags,
+        nsfw=composition.nsfw,
+        mal_id=composition.mal_id,
+        provider=composition.provider,
+        provider_id=composition.provider_id,
+        style=composition.style,
+        score=composition.score,
+        scored_by=composition.scored_by,
+        chapters=composition.chapters,
+        volumes=composition.volumes,
+        variants=composition.variants,
+        id=composition.id,
+    )

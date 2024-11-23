@@ -5,6 +5,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from src import constants
 
+from .string_util import lower
 from .datetime_util import now
 from .s3_util import delete_obj
 from .string_util import slugify
@@ -31,6 +32,7 @@ from .sqlalchemy_util import update_within_flush_event
 
 __all__ = [
     "now",
+    "lower",
     "slugify",
     "UseCache",
     "file_size",

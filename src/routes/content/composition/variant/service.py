@@ -1,4 +1,4 @@
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import Select, select, func, ScalarResult
 
@@ -18,7 +18,9 @@ def variants_options(query: Select) -> Select:
         joinedload(User.avatar), joinedload(User.role)
     )
 
-    origin_load = joinedload(CompositionVariant.origin).joinedload(Composition.preview)
+    origin_load = joinedload(CompositionVariant.origin).options(
+        joinedload(Composition.preview), selectinload(Composition.genres)
+    )
 
     return query.options(
         author_load,
@@ -27,7 +29,7 @@ def variants_options(query: Select) -> Select:
 
 
 async def count_variants(session: AsyncSession, slug: str) -> int:
-    return await session.scalar(select(Composition.variants).filter(Composition.slug == slug))
+    return await session.scalar(select(Composition.variants).filter(Composition.slug == slug)) or 0
 
 
 async def list_variants(

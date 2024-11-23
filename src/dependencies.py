@@ -18,6 +18,11 @@ master_required = define_error("master-required", "Master token required", 401)
 permission_denied = scheme.define_error(
     "permissions", "denied", "Permission denied: required permissions: {permissions}", 403
 )
+_variant_not_found = scheme.define_error(
+    "content/composition/variant", "not-found", "Composition variant not found", 404
+)
+_volume_not_found = scheme.define_error("content/volume", "not-found", "Volume not found", 404)
+_chapter_not_found = scheme.define_error("content/chapter", "not-found", "Chapter not found", 404)
 
 
 def client_details(request: Request) -> scheme.ClientInfo:
@@ -194,46 +199,35 @@ def require_page(page: int = Query(1, ge=1, description="№ Сторінки"))
     return page
 
 
-not_found = scheme.define_error(
-    "content/composition/variant", "not-found", "Composition variant not found", 404
-)
-
-
-@not_found.mark
+@_variant_not_found.mark
 async def require_composition_variant(
     variant_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> CompositionVariant:
     variant = await service.get_composition_variant(session, variant_id)
     if variant is None:
-        raise not_found
+        raise _variant_not_found
 
     return variant
 
 
-not_found = scheme.define_error("content/volume", "not-found", "Volume not found", 404)
-
-
-@not_found.mark
+@_volume_not_found.mark
 async def require_volume(
     volume_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> Volume:
     volume = await service.get_volume(session, volume_id)
     if volume is None:
-        raise not_found
+        raise _volume_not_found
 
     return volume
 
 
-not_found = scheme.define_error("content/chapter", "not-found", "Chapter not found", 404)
-
-
-@not_found.mark
+@_chapter_not_found.mark
 async def require_chapter(
     chapter_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> Chapter:
     chapter = await service.get_chapter(session, chapter_id)
     if chapter is None:
-        raise not_found
+        raise _chapter_not_found
 
     return chapter
 

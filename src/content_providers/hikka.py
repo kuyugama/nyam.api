@@ -14,6 +14,8 @@ def _format_genres(genres: list[dict]) -> list[dict]:
         {
             "name_uk": genre["name_ua"],
             "name_en": genre["name_en"],
+            "type": genre["type"],
+            "slug": genre["slug"],
         }
         for genre in genres
     ]

@@ -1,19 +1,18 @@
-from sqlalchemy import select, Select, func, ScalarResult, text, String
-from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, Select, func, ScalarResult
 
 from src import constants
 from src.content_providers import ContentProviderComposition
 from .scheme import CreateCompositionVariantBody, CompositionListBody
-from src.models import Composition, UploadImage, CompositionVariant, User
+from src.models import Composition, UploadImage, CompositionVariant, User, Genre
 
 
 async def get_composition_by_slug(session: AsyncSession, slug: str) -> Composition:
     return await session.scalar(
         select(Composition)
         .filter(Composition.slug == slug)
-        .options(joinedload(Composition.preview))
+        .options(joinedload(Composition.preview), selectinload(Composition.genres))
     )
 
 
@@ -26,6 +25,12 @@ async def publish_composition_from_provider(
         height=composition_.preview.height,
         mime_type=composition_.preview.mimetype,
     )
+
+    genres = (
+        await session.scalars(
+            select(Genre).filter(Genre.slug.in_([genre["slug"] for genre in composition_.genres]))
+        )
+    ).all()
 
     composition = Composition(
         preview=preview,
@@ -40,14 +45,16 @@ async def publish_composition_from_provider(
         year=composition_.year,
         start_date=composition_.start_date and composition_.start_date.replace(tzinfo=None),
         nsfw=composition_.nsfw,
-        genres=composition_.genres,
         tags=composition_.tags,
+        genres=[],
         chapters=composition_.chapters,
         volumes=composition_.volumes,
         mal_id=composition_.mal_id,
         provider=composition_.provider,
         provider_id=composition_.provider_id,
     )
+
+    composition.genres.extend(genres)
 
     session.add_all([preview, composition])
     await session.commit()
@@ -75,25 +82,15 @@ async def publish_composition_variant(
 
 def compositions_filters(query: Select, body: CompositionListBody):
     if body.genres is not None:
-        query = query.filter(
-            func.jsonb_path_exists(
-                Composition.genres,
-                text("'$[*] ? (@.name_en == $genre || @.name_uk == $genre)'"),
-                func.jsonb_build_object("genre", func.cast(body.genres, ARRAY(String))),
-            )
-        )
+        query = query.filter(*(Composition.genres.any(Genre.slug == slug) for slug in body.genres))
 
     if body.genres_exclude is not None:
         query = query.filter(
-            ~func.jsonb_path_exists(
-                Composition.genres,
-                text("'$[*] ? (@.name_en == $genre || @.name_uk == $genre)'"),
-                func.jsonb_build_object("genre", func.cast(body.genres_exclude, ARRAY(String))),
-            )
+            *(~Composition.genres.any(Genre.slug == slug) for slug in body.genres_exclude)
         )
 
     if body.tags is not None:
-        query = query.filter(Composition.tags.op("<@")(body.tags))
+        query = query.filter(Composition.tags.op("@>")(body.tags))
 
     if body.tags_exclude is not None:
         query = query.filter(Composition.tags.op("<>")(body.tags_exclude))
@@ -119,13 +116,14 @@ def compositions_filters(query: Select, body: CompositionListBody):
             Composition.volumes <= body.volumes[1],
         )
 
+    if body.styles is not None:
+        query = query.filter(Composition.style.in_(body.styles))
+
     return query
 
 
 def compositions_options(query: Select):
-    return query.options(
-        joinedload(Composition.preview),
-    )
+    return query.options(joinedload(Composition.preview), selectinload(Composition.genres))
 
 
 async def count_compositions(session: AsyncSession, body: CompositionListBody) -> int:

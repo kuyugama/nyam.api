@@ -1,6 +1,7 @@
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
+from src import util
 from src.scheme import SchemeModel
 
 
@@ -29,6 +30,13 @@ class CompositionListBody(SchemeModel):
     volumes: tuple[int, int] | None = Field(None, description="Кількість томів. [Від, До]")
     chapters: tuple[int, int] | None = Field(None, description="Кількість розділів. [Від, До]")
 
+    @field_validator("genres")
+    def validate_genres(cls, v: list[str] | None) -> list[str] | None:
+        if not v:
+            return None
+
+        return util.lower(v)
+
     @field_validator("years", "volumes", "chapters")
     def validate_range_fields(cls, v: tuple[int, int] | None) -> tuple[int, int] | None:
         if v is None:
@@ -42,7 +50,7 @@ class CompositionListBody(SchemeModel):
     @field_validator("genres_exclude", "tags_exclude")
     def validate_exclude_fields(cls, v: list[str] | None, info: ValidationInfo) -> list[str] | None:
         if not v:
-            return v
+            return None
 
         depend_field_name = info.field_name.split("_", 1)[0]
         depend_field = info.data.get(depend_field_name)

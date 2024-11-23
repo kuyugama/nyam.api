@@ -1,6 +1,7 @@
 from .user import User
 from .role import Role
 from .token import Token
+from .content import Genre
 from .content import Volume
 from .content import Chapter
 from .content import BasePage
@@ -20,6 +21,7 @@ __all__ = [
     "BasePage",
     "Chapter",
     "Volume",
+    "Genre",
     "Token",
     "Role",
     "User",

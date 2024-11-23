@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import select, delete, func, update
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Token, User, Role, CompositionVariant, Composition, Volume, Chapter, BasePage
@@ -49,7 +49,9 @@ async def get_composition_variant(session: AsyncSession, variant_id: int) -> Com
         joinedload(User.avatar), joinedload(User.role)
     )
 
-    origin_load = joinedload(CompositionVariant.origin).joinedload(Composition.preview)
+    origin_load = joinedload(CompositionVariant.origin).options(
+        joinedload(Composition.preview), selectinload(Composition.genres)
+    )
     return await session.scalar(
         select(CompositionVariant).filter_by(id=variant_id).options(author_load, origin_load)
     )

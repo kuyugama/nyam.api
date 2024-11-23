@@ -4,5 +4,6 @@ from .model import SchemeModel
 
 
 class Genre(SchemeModel):
-    name_en: str = Field(description="Genre name in English")
-    name_uk: str = Field(description="Genre name in Ukrainian")
+    name_en: str = Field(description="Назва жанру англійською")
+    name_uk: str = Field(description="Назва жанру українською")
+    slug: str = Field(description="Слаґ жанру")

@@ -64,6 +64,9 @@ class Permission(str):
         return "{other} | {self}".format(self=self, other=other)
 
     def sub(self, permission: str):
+        if permission == "*":
+            return Permission(self.permission + "." + permission).use_space(Permission)
+
         if permission not in self.space:
             raise AttributeError(f"Permission not defined: {self.permission} -> {permission}")
 

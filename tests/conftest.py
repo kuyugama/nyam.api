@@ -10,7 +10,7 @@ from datetime import timedelta
 from src.models.base import Base
 from src.util import secure_hash
 from contextlib import ExitStack
-from src.models import User, Token
+from src.models import User, Token, Composition, Genre, CompositionVariant
 from src.database import session_holder
 from pytest_postgresql import factories
 from sqlalchemy import make_url, URL, delete
@@ -134,6 +134,21 @@ async def role_user(session):
 
 
 @pytest.fixture
+async def role_translator(session):
+    return await helpers.create_role(
+        session,
+        "translator",
+        11,
+        default=False,
+        title="Translator",
+        permissions={
+            permissions.user.own.update_info: True,
+            permissions.content_variant["*"]: True,
+        },
+    )
+
+
+@pytest.fixture
 async def role_moderator(session):
     return await helpers.create_role(
         session,
@@ -157,7 +172,10 @@ async def role_admin(session):
         default=False,
         title="Administrator",
         permissions={
+            permissions.content["*"]: True,
+            permissions.override_author: True,
             permissions.user.update_info: True,
+            permissions.content_variant["*"]: True,
             permissions.user.own.update_info: True,
             permissions.user.role_management: True,
             permissions.user.permission_management: True,
@@ -240,8 +258,22 @@ async def expired_token(session, user_regular) -> Token:
 
 
 @pytest.fixture
-async def composition(session):
+async def composition(session) -> Composition:
     return await helpers.create_composition(session)
+
+
+@pytest.fixture
+async def composition_variant(session, composition, user_admin) -> CompositionVariant:
+    return await helpers.create_composition_variant(
+        session, composition, user_admin, "variant-title", "variant-description"
+    )
+
+
+@pytest.fixture
+async def genre(session) -> Genre:
+    return await helpers.create_genre(
+        session,
+    )
 
 
 @pytest.fixture

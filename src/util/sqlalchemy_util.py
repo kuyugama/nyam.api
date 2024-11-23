@@ -3,6 +3,7 @@ from typing import cast, Any, Mapping
 
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Column, Update, update, Connection
+from sqlalchemy.orm.attributes import set_committed_value
 
 
 @lru_cache(maxsize=64)
@@ -34,7 +35,7 @@ def update_within_flush_event(object_: DeclarativeBase, connection: Connection, 
         if not hasattr(object_, name):
             continue
 
-        setattr(object_, name, value)
+        set_committed_value(object_, name, value)
         update_values[name] = value
 
     connection.execute(update_by_pk(model, pk_value, **update_values))

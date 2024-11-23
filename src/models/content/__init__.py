@@ -1,3 +1,4 @@
+from .genre import Genre
 from .page import BasePage
 from .page import TextPage
 from .volume import Volume
