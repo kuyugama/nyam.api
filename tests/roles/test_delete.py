@@ -1,4 +1,5 @@
 from tests import requests
+from tests.helpers import assert_contain
 
 
 async def test_normal(client, role_user, master_key):
@@ -11,8 +12,12 @@ async def test_has_users(client, role_user, user_regular, master_key):
     response = await requests.roles.delete_role(client, master_key, role_user.name)
     print(response.json())
     assert response.status_code == 400
-    assert response.json()["category"] == "roles"
-    assert response.json()["code"] == "role-has-users"
+
+    assert_contain(
+        response.json(),
+        category="roles",
+        code="role-has-users",
+    )
 
 
 async def test_fallback_to_default(client, role_user, user_regular, role_unverified, master_key):

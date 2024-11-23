@@ -5,7 +5,13 @@ from config import settings
 from .base import BaseContentProvider, ContentProviderComposition, SearchEntry
 
 
-__all__ = ["get_provider", "provider_registry", "ContentProviderComposition", "SearchEntry"]
+__all__ = [
+    "SearchEntry",
+    "get_provider",
+    "provider_registry",
+    "BaseContentProvider",
+    "ContentProviderComposition",
+]
 
 
 class _ProviderRegistryEntry(TypedDict):

@@ -1,4 +1,3 @@
-import puremagic
 from fastapi import Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,9 +8,14 @@ from src.database import acquire_session
 from src import constants, scheme, permissions
 from src.service import get_role_by_name, get_user_by_nickname
 from src.routes.users.scheme import UpdateUserBody, UpdateOtherUserBody
-from src.dependencies import require_token, require_permissions, master_grant, optional_token
 
-MB = 1024 * 1024
+from src.dependencies import (
+    file_mime,
+    master_grant,
+    require_token,
+    optional_token,
+    require_permissions,
+)
 
 define_error = scheme.define_error_category("users")
 role_not_found = define_error(
@@ -84,19 +88,15 @@ async def validate_update_user(
     return body
 
 
-def file_mime(file: UploadFile) -> str:
-    return puremagic.from_stream(file.file, True, file.filename)
-
-
 @has_errors(invalid_avatar_mime, avatar_too_big)
 def validate_avatar(
     file: UploadFile,
     mime: str = Depends(file_mime),
 ):
-    if mime not in ("image/png", "image/jpeg", "image/webp"):
+    if mime not in constants.AVATAR_ALLOWED_MIMES:
         raise invalid_avatar_mime
 
-    if file.size > constants.MAX_AVATAR_SIZE:
+    if file.size > constants.AVATAR_MAX_SIZE:
         raise avatar_too_big
 
     return file.file

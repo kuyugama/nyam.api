@@ -1,16 +1,21 @@
 from datetime import datetime
 
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import String, ForeignKey, event, Connection
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
-from .user import User
-from .image import UploadImage
+from src.models.base import Base
+from src.models.user import User
+from src.models import m2m_tables
+from src.models.image import UploadImage
+from src.models.content.genre import Genre
+from src.util import update_within_flush_event
 
 
 class Composition(Base):
+    __tablename__ = "service_compositions"
+
     preview_id = mapped_column(ForeignKey(UploadImage.id, ondelete="SET NULL"), nullable=True)
     preview: Mapped[UploadImage] = relationship(UploadImage)
 
@@ -32,8 +37,8 @@ class Composition(Base):
     year: Mapped[int] = mapped_column(index=True, nullable=True)
     start_date: Mapped[datetime] = mapped_column(index=True, nullable=True)
     nsfw: Mapped[bool] = mapped_column(index=True, default=False)
-    genres: Mapped[list[dict]] = mapped_column(MutableList.as_mutable(JSONB))  # type: ignore
-    tags: Mapped[list[str]] = mapped_column(ARRAY(String))
+    genres: Mapped[list[Genre]] = relationship(secondary=m2m_tables.composition_genres)
+    tags: Mapped[list[str]] = mapped_column(MutableList.as_mutable(ARRAY(String)))
     chapters: Mapped[int] = mapped_column(index=True, nullable=True)
     volumes: Mapped[int] = mapped_column(index=True, nullable=True)
 
@@ -60,6 +65,8 @@ class Composition(Base):
 
 
 class CompositionVariant(Base):
+    __tablename__ = "service_composition_variants"
+
     origin_id = mapped_column(ForeignKey(Composition.id, ondelete="CASCADE"))
     origin: Mapped[Composition] = relationship(foreign_keys=[origin_id])
 
@@ -72,8 +79,8 @@ class CompositionVariant(Base):
     synopsis_local: Mapped[str] = mapped_column(index=True, nullable=True)
 
     # Cached fields
-    chapters: Mapped[int] = mapped_column(index=True)
-    volumes: Mapped[int] = mapped_column(index=True)
+    chapters: Mapped[int] = mapped_column(index=True, default=0)
+    volumes: Mapped[int] = mapped_column(index=True, default=0)
 
     @property
     def title(self) -> str | None:
@@ -85,10 +92,12 @@ class CompositionVariant(Base):
 
 
 @event.listens_for(CompositionVariant, "before_insert")
-def _new_variant(_: type[CompositionVariant], __: Connection, target: CompositionVariant):
-    target.origin.variants += 1
+def _new_variant(_: type[CompositionVariant], connection: Connection, variant: CompositionVariant):
+    update_within_flush_event(variant.origin, connection, variants=variant.origin.variants + 1)
 
 
 @event.listens_for(CompositionVariant, "before_delete")
-def _new_variant(_: type[CompositionVariant], __: Connection, target: CompositionVariant):
-    target.origin.variants -= 1
+def _remove_variant(
+    _: type[CompositionVariant], connection: Connection, variant: CompositionVariant
+):
+    update_within_flush_event(variant.origin, connection, variants=variant.origin.variants - 1)

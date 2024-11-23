@@ -1,0 +1,16 @@
+name: api.nyam
+
+services:
+  redis:
+    image: redis:7
+    ports:
+      - 6379:6379
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: database
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: user

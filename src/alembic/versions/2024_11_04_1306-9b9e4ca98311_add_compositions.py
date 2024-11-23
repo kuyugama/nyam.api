@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column("mal_id", sa.Integer(), nullable=True),
         sa.Column("provider", sa.String(), nullable=True),
         sa.Column("provider_id", sa.String(), nullable=True),
-        sa.Column("variants", sa.Integer(), nullable=False),
+        sa.Column("variant", sa.Integer(), nullable=False),
         sa.Column("score", sa.Float(), nullable=False),
         sa.Column("scored_by", sa.Integer(), nullable=False),
         sa.Column("id", sa.BIGINT(), nullable=False),
@@ -127,7 +127,7 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(
-        op.f("ix_service_compositions_variants"), "service_compositions", ["variants"], unique=False
+        op.f("ix_service_compositions_variants"), "service_compositions", ["variant"], unique=False
     )
     op.create_index(
         op.f("ix_service_compositions_volumes"), "service_compositions", ["volumes"], unique=False

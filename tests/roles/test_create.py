@@ -77,5 +77,10 @@ async def test_no_master(client, master_key):
     )
     print(response.json())
     assert response.status_code == 401
-    assert response.json()["code"] == "master-required"
-    assert response.json()["category"] == "token"
+
+    assert_contain(
+        response.json(),
+        category="token",
+        code="master-required",
+
+    )
