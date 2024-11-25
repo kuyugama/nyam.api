@@ -136,6 +136,26 @@ def slugify(
     return text
 
 
+def email_to_nickname(email: str) -> str:
+    source = email.split("@")[0]
+
+    prefixes_to_remove = ["mail."]
+
+    for prefix in prefixes_to_remove:
+        source = source.removeprefix(prefix)
+
+    string = ""
+    for char in source:
+        if char in ".-+":
+            if not string.endswith("_"):
+                string += "_"
+            continue
+
+        string += char
+
+    return string
+
+
 def lower(s: str | list[str]) -> str | list[str]:
     if isinstance(s, list):
         return list(map(lower, s))
