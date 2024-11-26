@@ -134,3 +134,10 @@ def slugify(
         text = secrets.token_urlsafe(16)
 
     return text
+
+
+def lower(s: str | list[str]) -> str | list[str]:
+    if isinstance(s, list):
+        return list(map(lower, s))
+
+    return s.lower()

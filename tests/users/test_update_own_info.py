@@ -1,6 +1,7 @@
 import secrets
 
 from tests import requests
+from tests.helpers import assert_contain
 
 
 async def test_normal(client, token_regular, user_regular):
@@ -42,8 +43,7 @@ async def test_empty(client, token_regular):
     print(response.json())
     assert response.status_code == 400
 
-    assert response.json()["category"] == "users"
-    assert response.json()["code"] == "empty-update"
+    assert_contain(response.json(), category="users", code="empty-update")
 
 
 async def test_nothing_to_update(client, token_regular, user_regular):
@@ -57,5 +57,4 @@ async def test_nothing_to_update(client, token_regular, user_regular):
     print(response.json())
     assert response.status_code == 400
 
-    assert response.json()["category"] == "users"
-    assert response.json()["code"] == "nothing-to-update"
+    assert_contain(response.json(), category="users", code="nothing-to-update")

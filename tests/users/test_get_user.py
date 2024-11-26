@@ -1,4 +1,5 @@
 from tests import requests
+from tests.helpers import assert_contain
 
 
 async def test_normal(client, user_regular):
@@ -6,8 +7,11 @@ async def test_normal(client, user_regular):
     print(response.json())
     assert response.status_code == 200
 
-    assert response.json()["id"] == user_regular.id
-    assert response.json()["nickname"] == user_regular.nickname
+    assert_contain(
+        response.json(),
+        id=user_regular.id,
+        nickname=user_regular.nickname,
+    )
 
 
 async def test_non_existent(client, user_regular):
@@ -15,5 +19,8 @@ async def test_non_existent(client, user_regular):
     print(response.json())
     assert response.status_code == 404
 
-    assert response.json()["category"] == "users"
-    assert response.json()["code"] == "not-found"
+    assert_contain(
+        response.json(),
+        category="users",
+        code="not-found",
+    )

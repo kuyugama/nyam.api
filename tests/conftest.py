@@ -1,6 +1,10 @@
+import io
 import uuid
 import time
+
 import pytest
+from PIL import Image
+
 import config
 import asyncio
 from tests import helpers
@@ -10,7 +14,6 @@ from datetime import timedelta
 from src.models.base import Base
 from src.util import secure_hash
 from contextlib import ExitStack
-from src.models import User, Token
 from src.database import session_holder
 from pytest_postgresql import factories
 from sqlalchemy import make_url, URL, delete
@@ -19,8 +22,36 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pytest_postgresql.janitor import DatabaseJanitor
 from src.ratelimit import memory_store, memory_ranking
 
+from src.models import (
+    User,
+    Token,
+    Genre,
+    Volume,
+    Chapter,
+    TextPage,
+    ImagePage,
+    UploadImage,
+    Composition,
+    CompositionVariant,
+)
+
 
 test_db = factories.postgresql_proc()
+
+
+@pytest.fixture(scope="session")
+def _image_file():
+    image = Image.new("RGB", (100, 100), "black")
+    file = io.BytesIO()
+    file.name = "file.png"
+    image.save(file)
+    return file
+
+
+@pytest.fixture
+def image_file(_image_file):
+    _image_file.seek(0)
+    return _image_file
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +76,6 @@ def x_real_ip() -> str:
 async def client(_app, x_real_ip):
     async with TestClient(_app) as client:
         client.headers["x-real-ip"] = x_real_ip
-        print(123)
         yield client
 
 
@@ -107,6 +137,11 @@ async def session(_connection) -> AsyncSession:
 
 
 @pytest.fixture
+async def upload_image(session) -> UploadImage:
+    return await helpers.create_upload_image(session)
+
+
+@pytest.fixture
 def master_key() -> str:
     return config.settings.service.master_key
 
@@ -116,6 +151,7 @@ async def role_unverified(session):
     return await helpers.create_role(
         session,
         "unverified",
+        0,
         default=True,
         title="Unverified user",
         permissions={},
@@ -127,8 +163,24 @@ async def role_user(session):
     return await helpers.create_role(
         session,
         "user",
+        10,
         default=False,
         title="Regular user",
+    )
+
+
+@pytest.fixture
+async def role_translator(session):
+    return await helpers.create_role(
+        session,
+        "translator",
+        11,
+        default=False,
+        title="Translator",
+        permissions={
+            permissions.user.own.update_info: True,
+            permissions.content_variant["*"]: True,
+        },
     )
 
 
@@ -137,6 +189,7 @@ async def role_moderator(session):
     return await helpers.create_role(
         session,
         "moderator",
+        20,
         default=False,
         title="Moderator",
         permissions={
@@ -151,10 +204,18 @@ async def role_admin(session):
     return await helpers.create_role(
         session,
         "admin",
+        30,
         default=False,
         title="Administrator",
         permissions={
+            permissions.volume["*"]: True,  # noqa
+            permissions.chapter["*"]: True,  # noqa
+            permissions.content["*"]: True,
+            permissions.page_text["*"]: True,  # noqa
+            permissions.page_image["*"]: True,  # noqa
+            permissions.override_author: True,
             permissions.user.update_info: True,
+            permissions.content_variant["*"]: True,
             permissions.user.own.update_info: True,
             permissions.user.role_management: True,
             permissions.user.permission_management: True,
@@ -237,8 +298,42 @@ async def expired_token(session, user_regular) -> Token:
 
 
 @pytest.fixture
-async def composition(session):
+async def composition(session) -> Composition:
     return await helpers.create_composition(session)
+
+
+@pytest.fixture
+async def composition_variant(session, composition, user_admin) -> CompositionVariant:
+    return await helpers.create_composition_variant(
+        session, composition, user_admin, "variant-title", "variant-description"
+    )
+
+
+@pytest.fixture
+async def volume(session, composition_variant) -> Volume:
+    return await helpers.create_volume(session, composition_variant, 1)
+
+
+@pytest.fixture
+async def chapter(session, volume) -> Chapter:
+    return await helpers.create_chapter(session, volume, 1)
+
+
+@pytest.fixture
+async def page_text(session, chapter) -> TextPage:
+    return await helpers.create_text_page(session, chapter, 1, "page content")
+
+
+@pytest.fixture
+async def page_image(session, chapter, upload_image) -> ImagePage:
+    return await helpers.create_image_page(session, chapter, 1, upload_image)
+
+
+@pytest.fixture
+async def genre(session) -> Genre:
+    return await helpers.create_genre(
+        session,
+    )
 
 
 @pytest.fixture

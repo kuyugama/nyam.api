@@ -89,6 +89,8 @@ def make_app(test_mode: bool = False) -> fastapi.FastAPI:
             {"name": "Ролі"},
             {"name": "default"},
         ],
+        title=config.settings.app.title,
+        version=config.settings.app.version,
     )
 
     router: APIRouter = getattr(app, "router")
@@ -118,10 +120,10 @@ async def root():
 
 
 @home_router.get("/errors")
-async def errors() -> dict[str, dict[str, tuple[int, str]]]:
+async def _errors() -> dict[str, dict[str, tuple[int, str]]]:
     return scheme.error.errors
 
 
 @home_router.get("/permissions")
-async def permissions() -> list[str]:
+async def _permissions() -> list[str]:
     return permission_registry

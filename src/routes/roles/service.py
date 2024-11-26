@@ -2,18 +2,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, ScalarResult, update
 
 from src.models import Role, User
-from src.service import get_role_by_name as get_role
+from src.service import get_role_by_name
 from src.routes.roles.scheme import CreateRoleBody, UpdateRoleBody
 
 
 __all__ = [
-    "get_role",
     "has_users",
     "list_roles",
     "create_role",
     "update_role",
     "count_roles",
     "delete_role",
+    "get_role_by_name",
 ]
 
 
@@ -29,10 +29,10 @@ async def has_users(session: AsyncSession, name: str) -> bool:
 
 
 async def create_role(session: AsyncSession, body: CreateRoleBody) -> Role | None:
-
     role = Role(
         name=body.name,
         title=body.title,
+        weight=body.weight,
         default=body.default,
         permissions=body.permissions,
     )
@@ -67,6 +67,9 @@ async def update_role(session: AsyncSession, body: UpdateRoleBody, role: Role):
             role.permissions.update(body.permissions)
         else:
             role.permissions = body.permissions
+
+    if body.weight is not None:
+        role.weight = body.weight
 
     await session.commit()
 

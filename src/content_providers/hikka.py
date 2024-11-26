@@ -3,6 +3,7 @@ from uuid import UUID
 
 import aiohttp
 
+import config
 from src import constants
 from src.scheme import Paginated
 from src.util.image_util import web_image_metadata
@@ -14,6 +15,8 @@ def _format_genres(genres: list[dict]) -> list[dict]:
         {
             "name_uk": genre["name_ua"],
             "name_en": genre["name_en"],
+            "type": genre["type"],
+            "slug": genre["slug"],
         }
         for genre in genres
     ]
@@ -39,7 +42,9 @@ def _rename(composition: dict, **kwargs):
 
 class HikkaContentProvider(BaseContentProvider):
     async def parse_composition(self, identifier: str | int | UUID) -> ContentProviderComposition:
-        client = aiohttp.ClientSession(self.endpoint)
+        client = aiohttp.ClientSession(
+            self.endpoint, headers=config.settings.bot.composition.headers
+        )
 
         async with client:
             response = await client.get("/manga/{slug}".format(slug=identifier))
@@ -60,7 +65,9 @@ class HikkaContentProvider(BaseContentProvider):
         return ContentProviderComposition.model_validate(composition)
 
     async def search_composition(self, query: str, page: int = 1):
-        client = aiohttp.ClientSession(self.endpoint)
+        client = aiohttp.ClientSession(
+            self.endpoint, headers=config.settings.bot.composition.headers
+        )
 
         async with client:
             response = await client.post("/manga", json={"query": query}, params={"page": page})

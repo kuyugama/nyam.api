@@ -20,6 +20,7 @@ async def test_normal(client: TestClient, user_regular, token_regular):
         "role": {
             "name": user_regular.role.name,
             "title": user_regular.role.title,
+            "weight": user_regular.role.weight,
         },
         "created_at": int(utc_timestamp(user_regular.created_at)),
         "permissions": {permissions.user.own.update_info: True},

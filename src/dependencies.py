@@ -1,12 +1,15 @@
+import warnings
 from functools import lru_cache
 
+import puremagic
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Header, Query, Depends, BackgroundTasks, params, Request
+from fastapi import Header, Query, Depends, BackgroundTasks, params, Request, UploadFile, FastAPI
 
-from .models import Token
 from config import settings
+from .util import cache_key_hash
 from . import service, scheme, util
 from src.database import session_holder, acquire_session
+from .models import Token, CompositionVariant, Volume, Chapter
 
 define_error = scheme.define_error_category("token")
 token_required = define_error("required", "Token required", 401)
@@ -15,6 +18,12 @@ master_required = define_error("master-required", "Master token required", 401)
 permission_denied = scheme.define_error(
     "permissions", "denied", "Permission denied: required permissions: {permissions}", 403
 )
+_variant_not_found = scheme.define_error(
+    "content/composition/variant", "not-found", "Composition variant not found", 404
+)
+_volume_not_found = scheme.define_error("content/volume", "not-found", "Volume not found", 404)
+_chapter_not_found = scheme.define_error("content/chapter", "not-found", "Chapter not found", 404)
+_page_not_found = scheme.define_error("content/page", "not-found", "Page not found", 404)
 
 
 def client_details(request: Request) -> scheme.ClientInfo:
@@ -94,6 +103,19 @@ def master_lock(master_granted: bool = Depends(master_grant)):
         raise master_required
 
 
+def check_permissions(master_granted: bool, token: Token | None, *permissions: str) -> bool:
+    if master_granted:
+        return True
+
+    if not isinstance(token, Token):
+        return False
+
+    if not util.check_permissions(permissions, token.owner.permissions):
+        return False
+
+    return True
+
+
 @lru_cache
 def require_permissions(*permissions: str) -> params.Depends:
     """
@@ -123,22 +145,153 @@ def require_permissions(*permissions: str) -> params.Depends:
         master_granted: bool = Depends(master_grant),
         token: Token | None = Depends(optional_token),
     ):
-        if master_granted:
-            return
-
-        extra = dict(permissions=", ".join(permissions))
-
-        if not isinstance(token, Token):
-            raise permission_denied(extra=extra)
-
-        if not util.check_permissions(permissions, token.owner.permissions):
-            raise permission_denied(extra=extra)
+        if not check_permissions(master_granted, token, *permissions):
+            raise permission_denied(extra=dict(permissions=", ".join(permissions)))
 
     setattr(dependency, "permissions", permissions)
 
     return Depends(dependency)
 
 
+@permission_denied.mark
+def interactive_require_permissions(
+    master_granted: bool = Depends(master_grant), token: Token | None = Depends(optional_token)
+):
+    """
+    Interactive permission shield for endpoint. Filters out all users that doesn't have required permissions.
+
+    Permissions format:
+    ::
+        CATEGORY = SUBCATEGORY = NAME = [-a-z]+
+
+        PERMISSION = {NAME} | {CATEGORY}.{NAME} | {CATEGORY}.{SUBCATEGORY}.{NAME}
+
+        PERMISSION_ENTRY = "{PERMISSION}" | "{PERMISSION} | {PERMISSION_ENTRY}"
+
+    One permission entry can contain multiple permissions divided by "|".
+    In this case if any of permissions in this entry exists in user's permission - this entry will
+    pass permission check
+
+    Example:
+    ::
+        async def dependency(check_permission = interactive_require_permissions):
+            content = await service.get_content(...)
+            check_permission(permissions.content[content.type].update)
+    """
+
+    def permission_checker(*permissions: str) -> bool:
+        if not check_permissions(master_granted, token, *permissions):
+            raise permission_denied(extra=dict(permissions=", ".join(permissions)))
+
+        return True
+
+    return permission_checker
+
+
 def require_page(page: int = Query(1, ge=1, description="№ Сторінки")):
     """Return page number provided by user"""
     return page
+
+
+@_variant_not_found.mark
+async def require_composition_variant(
+    variant_id: int, session: AsyncSession = Depends(acquire_session)
+) -> CompositionVariant:
+    variant = await service.get_composition_variant(session, variant_id)
+    if variant is None:
+        raise _variant_not_found
+
+    return variant
+
+
+@_volume_not_found.mark
+async def require_volume(
+    volume_id: int, session: AsyncSession = Depends(acquire_session)
+) -> Volume:
+    volume = await service.get_volume(session, volume_id)
+    if volume is None:
+        raise _volume_not_found
+
+    return volume
+
+
+@_chapter_not_found.mark
+async def require_chapter(
+    chapter_id: int, session: AsyncSession = Depends(acquire_session)
+) -> Chapter:
+    chapter = await service.get_chapter(session, chapter_id)
+    if chapter is None:
+        raise _chapter_not_found
+
+    return chapter
+
+
+@_page_not_found.mark
+async def require_content_page(page_id: int, session: AsyncSession = Depends(acquire_session)):
+    page = await service.get_page(session, page_id)
+    if page is None:
+        raise _page_not_found
+
+    return page
+
+
+def file_mime(file: UploadFile) -> str:
+    return puremagic.from_stream(file.file, True, file.filename)
+
+
+@lru_cache
+def require_use_cache(key: str):
+    """
+    Dependency generates function to save result of coroutines using cache key
+
+    :param key: cache context key (can be used to drop cache)
+    :return: (tuple<Any, ...>, Awaitable<T>) -> Awaitable<T>
+    """
+
+    def dependency(request: Request):
+        # Ignore not awaited coroutines
+        warnings.simplefilter("ignore", RuntimeWarning)
+
+        app: FastAPI = request.scope["app"]
+
+        if not hasattr(app, "user_cache"):
+            app.user_cache = {}
+
+        cache = app.user_cache.setdefault(key, {})
+
+        async def use_cache(cache_key, coro):
+            nonlocal cache
+            key = cache_key_hash(cache_key)
+
+            if key in cache:
+                return cache[key]
+
+            return cache.setdefault(key, await coro)
+
+        yield use_cache
+
+    return Depends(dependency)
+
+
+@lru_cache
+def require_drop_cache(key: str):
+    """
+    Drop all cache at specified key
+    """
+
+    def dependency(request: Request):
+        app: FastAPI = request.scope["app"]
+        if not hasattr(app, "user_cache"):
+            app.user_cache = {}
+
+        cache = app.user_cache.setdefault(key, {})
+
+        async def drop_cache():
+            cache.clear()
+
+        yield drop_cache
+
+        if cache:
+            cache.clear()
+
+    return Depends(dependency)

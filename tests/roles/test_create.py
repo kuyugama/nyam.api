@@ -9,6 +9,7 @@ async def test_normal(client, master_key):
     permissions_ = {}
     expected_permissions = permissions_
     base_role = None
+    weight = 1
     response = await requests.roles.create_role(
         client,
         master_key,
@@ -17,6 +18,7 @@ async def test_normal(client, master_key):
         default,
         permissions_,
         base_role,
+        weight,
     )
     print(response.json())
     assert response.status_code == 200
@@ -27,6 +29,7 @@ async def test_normal(client, master_key):
         default=default,
         title=role_title,
         permissions=expected_permissions,
+        weight=weight,
     )
 
 
@@ -74,5 +77,9 @@ async def test_no_master(client, master_key):
     )
     print(response.json())
     assert response.status_code == 401
-    assert response.json()["code"] == "master-required"
-    assert response.json()["category"] == "token"
+
+    assert_contain(
+        response.json(),
+        category="token",
+        code="master-required",
+    )
