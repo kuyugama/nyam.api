@@ -55,11 +55,6 @@ async def _use_token(token: str):
         await session.commit()
 
 
-async def _drop_expired_tokens():
-    async with session_holder.session() as session:
-        await service.drop_expired_tokens(session)
-
-
 @token_expired.mark
 async def optional_token(
     background: BackgroundTasks,
@@ -83,8 +78,6 @@ async def optional_token(
         # Prolong token, user online status and mark token as used only if it is a real token
         if isinstance(token, Token):
             background.add_task(_use_token, token_body)
-
-        background.add_task(_drop_expired_tokens)
 
 
 @token_required.mark
