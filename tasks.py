@@ -1,13 +1,14 @@
 import sys
 import inspect
 from datetime import timedelta
-from functools import lru_cache, wraps, partial
+from functools import lru_cache, wraps
 
 import dramatiq
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from ua_parser import user_agent_parser
 from dramatiq.brokers.stub import StubBroker
+from periodiq import PeriodiqMiddleware, cron
 from dramatiq.brokers.redis import RedisBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,8 +20,16 @@ else:
     broker = StubBroker()
 
 broker.add_middleware(dramatiq.middleware.asyncio.AsyncIO())
+broker.add_middleware(PeriodiqMiddleware())
 dramatiq.set_broker(broker)
-write = partial(print, "[+]")
+
+
+def log(*args, sep: str = " ", end: str = "\n"):
+    stack = inspect.stack()
+    caller = stack[1]
+    ctx = caller.function + " >>>"
+
+    print(f"[+] {ctx}".strip(), *args, sep=sep, end=end)
 
 
 @lru_cache(maxsize=-1)
@@ -62,13 +71,12 @@ async def new_login(session: AsyncSession, user_id: int, address: str, agent: st
 
     assert isinstance(user, User), f"Non-User instance returned by sqlalchemy - {user!r}[{user}]"
 
-    write("NEW LOGIN")
-    write("Address:", address)
-    write(f"OS:", agent_data["os"])
-    write(f"Device:", agent_data["device"])
-    write(f"Client:", agent_data["user_agent"])
-    write("User:", user.id, "Nickname:", user.nickname)
-    write("Tokens count:", len(user.tokens))
+    log("Address:", address)
+    log(f"OS:", agent_data["os"])
+    log(f"Device:", agent_data["device"])
+    log(f"Client:", agent_data["user_agent"])
+    log("User:", user.id, "Nickname:", user.nickname)
+    log("Tokens count:", len(user.tokens))
 
     older_and_active_tokens = await session.scalars(
         select(Token).filter(
@@ -80,9 +88,7 @@ async def new_login(session: AsyncSession, user_id: int, address: str, agent: st
 
     # There should be logic for sending notification to specific tokens about actions
     for token in older_and_active_tokens:
-        write(f"Notifying token {token.id} about new login")
-
-    write("NEW LOGIN END")
+        log(f"Notifying token {token.id} about new login")
 
 
 @dramatiq.actor
@@ -98,9 +104,16 @@ async def user_nickname_updated(
         return
 
     # There should be logic to save up to 10 nickname changes per user
-    write("USER NICKNAME UPDATE")
-    write("User:", user.id, "Nickname:", user.nickname)
-    write("Before:", before)
-    write("After:", after)
-    write("Updated by:", updated_by)
-    write("USER NICKNAME UPDATE END")
+    log("User:", user.id, "Nickname:", user.nickname)
+    log("Before:", before)
+    log("After:", after)
+    log("Updated by:", updated_by)
+
+
+@dramatiq.actor(periodic=cron("0,*/10 * * * *"))
+@with_session
+async def periodiq_drop_expired_tokens(session: AsyncSession):
+    from src.service import drop_expired_tokens
+
+    log("Dropping all expired tokens")
+    await drop_expired_tokens(session)

@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Callable, AsyncContextManager
 
+import dramatiq
 import fastapi
 from fastapi import APIRouter, FastAPI
 from redis.asyncio import Redis
@@ -50,6 +51,7 @@ def lifespan(test_mode: bool = True) -> Callable[[FastAPI], AsyncContextManager[
         if test_mode:
             ranking = memory_ranking()
             store = memory_store()
+            dramatiq.set_broker(dramatiq.Broker())
         else:
             session_holder.init(url=config.settings.postgresql.url)
             redis = Redis.from_url(url=config.settings.redis.url)
