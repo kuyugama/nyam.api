@@ -26,6 +26,7 @@ AVATAR_MAX_WIDTH = 1024
 AVATAR_MAX_HEIGHT = 1024
 
 USER_ONLINE_TTL = 5 * MINUTE
+USER_NICKNAME_MIN = 5 # Characters
 
 
 # Composition styles

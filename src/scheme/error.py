@@ -7,6 +7,7 @@ from pydantic import Field
 from pydantic import HttpUrl
 
 from .model import SchemeModel
+from src.util import snake_to_camel
 
 
 class InvalidField(SchemeModel):
@@ -69,7 +70,7 @@ class APIError(fastapi.HTTPException):
 
         model_name = (
             "Error_"
-            + category.capitalize()
+            + snake_to_camel(category, "/")
             + "_"
             + "".join(word.capitalize() for word in code.split("-"))
         )
@@ -121,15 +122,20 @@ class APIError(fastapi.HTTPException):
         extra: dict[str, str] | None = None,
     ):
         self.code = code
+        self.extra = extra
         self.headers = headers
         self.category = category
         self.status_code, self.message = errors[category][code]
 
-        if extra is not None:
-            self.message = self.message.format(**extra)
+        self.formatted_message = self.message
+        if self.extra is not None:
+            self.formatted_message = self.message.format(**extra)
 
     def __repr__(self):
         return f"APIError<{self.category}:{self.code}:{self.status_code}>({self.message!r})"
+
+    def __str__(self):
+        return f"{self.category}+{self.code}: {self.formatted_message}"
 
     def __call__(self, extra: dict[str, str] | None = None, headers: dict[str, str] | None = None):
         return APIError(self.category, self.code, headers or self.headers, extra)
@@ -138,7 +144,7 @@ class APIError(fastapi.HTTPException):
     def response(self) -> fastapi.responses.JSONResponse:
         return fastapi.responses.JSONResponse(
             content=ErrorModel(
-                message=self.message,
+                message=self.formatted_message,
                 category=self.category,
                 code=self.code,
                 cat="https://http.cat/{cat}".format(cat=self.status_code),

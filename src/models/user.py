@@ -25,10 +25,11 @@ def _user_next_offline():
 
 class User(Base):
     # Sign-in columns
-    email: orm.Mapped[str] = orm.mapped_column(index=True)
+    # Email can be null only if user logged in by oauth
+    email: orm.Mapped[str] = orm.mapped_column(index=True, nullable=True)
     # Public sign-in column (user can be found by it)
     nickname: orm.Mapped[str] = orm.mapped_column(index=True)
-    password_hash: orm.Mapped[str]
+    password_hash: orm.Mapped[str] = orm.mapped_column(nullable=True)
 
     pseudonym: orm.Mapped[str] = orm.mapped_column(index=True, nullable=True)
     description: orm.Mapped[str] = orm.mapped_column(index=True, nullable=True)

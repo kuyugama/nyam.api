@@ -18,11 +18,14 @@ from .fastapi_util import has_errors
 from .hash_util import cache_key_hash
 from .string_util import verify_payload
 from .string_util import camel_to_snake
+from .string_util import snake_to_camel
 from .pydantic_util import format_error
 from .datetime_util import utc_timestamp
 from .sqlalchemy_util import update_by_pk
 from .image_util import filter_image_size
+from .string_util import email_to_nickname
 from .fastapi_util import setup_route_errors
+from .datetime_util import from_utc_timestamp
 from .fastapi_util import route_has_dependency
 from .permissions_util import check_permissions
 from .permissions_util import permission_registry
@@ -46,11 +49,14 @@ __all__ = [
     "utc_timestamp",
     "cache_key_hash",
     "camel_to_snake",
+    "snake_to_camel",
     "verify_payload",
     "upload_file_obj",
+    "email_to_nickname",
     "PermissionChecker",
     "filter_image_size",
     "check_permissions",
+    "from_utc_timestamp",
     "setup_route_errors",
     "paginated_response",
     "permission_registry",

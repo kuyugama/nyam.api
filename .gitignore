@@ -5,3 +5,5 @@ poetry.lock
 .git
 .pytest_cache
 alembic.ini
+_app.py
+config.pyi

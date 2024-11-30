@@ -34,3 +34,22 @@ async def token_info(
         "/auth/token/info",
         headers={"Token": token},
     )
+
+
+async def list_oauth_providers(client: TestClient) -> Response:
+    return await client.get(
+        "/auth/oauth/providers",
+    )
+
+
+async def oauth_authorize(client: TestClient, provider: str, query: dict[str, str]) -> Response:
+    return await client.post(
+        f"/auth/oauth/{provider}",
+        query_string=query,
+    )
+
+
+async def oauth_get_provider(client: TestClient, provider: str) -> Response:
+    return await client.get(
+        f"/auth/oauth/{provider}",
+    )

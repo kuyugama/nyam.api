@@ -10,10 +10,14 @@ from .content import ImagePage
 from .image import UploadImage
 from .content import Composition
 from .content import CompositionVariant
+from .oauth_identity import OAuthIdentity
+from .thirdparty_token import ThirdpartyToken
 
 
 __all__ = [
     "CompositionVariant",
+    "ThirdpartyToken",
+    "OAuthIdentity",
     "Composition",
     "UploadImage",
     "ImagePage",

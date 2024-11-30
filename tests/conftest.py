@@ -224,6 +224,26 @@ async def role_admin(session):
 
 
 @pytest.fixture(scope="session")
+def email_user_unverified() -> str:
+    return "unverified@mail.com"
+
+
+@pytest.fixture(scope="session")
+def email_user_regular() -> str:
+    return "user@mail.com"
+
+
+@pytest.fixture(scope="session")
+def email_user_moderator() -> str:
+    return "moderator@mail.com"
+
+
+@pytest.fixture(scope="session")
+def email_user_admin() -> str:
+    return "administrator@mail.com"
+
+
+@pytest.fixture(scope="session")
 def password_user() -> str:
     return "password"
 
@@ -234,44 +254,44 @@ def hash_password_user(password_user: str) -> str:
 
 
 @pytest.fixture
-async def user_unverified(session, hash_password_user, role_unverified):
+async def user_unverified(session, hash_password_user, email_user_unverified, role_unverified):
     return await helpers.create_user(
         session,
-        "unverified@mail.com",
-        "unverified",
+        email_user_unverified,
+        helpers.email_to_nickname(email_user_unverified),
         role_unverified,
         password_hash=hash_password_user,
     )
 
 
 @pytest.fixture
-async def user_regular(session, hash_password_user, role_user) -> User:
+async def user_regular(session, hash_password_user, email_user_regular, role_user) -> User:
     return await helpers.create_user(
         session,
-        "user@mail.com",
-        "regular_user",
+        email_user_regular,
+        helpers.email_to_nickname(email_user_regular),
         role_user,
         password_hash=hash_password_user,
     )
 
 
 @pytest.fixture
-async def user_moderator(session, hash_password_user, role_moderator) -> User:
+async def user_moderator(session, hash_password_user, email_user_moderator, role_moderator) -> User:
     return await helpers.create_user(
         session,
-        "moderator@mail.com",
-        "moderator",
+        email_user_moderator,
+        helpers.email_to_nickname(email_user_moderator),
         role_moderator,
         password_hash=hash_password_user,
     )
 
 
 @pytest.fixture
-async def user_admin(session, hash_password_user, role_admin) -> User:
+async def user_admin(session, hash_password_user, email_user_admin, role_admin) -> User:
     return await helpers.create_user(
         session,
-        "admin@mail.com",
-        "administrator",
+        email_user_admin,
+        helpers.email_to_nickname(email_user_admin),
         role_admin,
         password_hash=hash_password_user,
     )

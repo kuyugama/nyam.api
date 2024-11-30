@@ -7,12 +7,18 @@ from urllib.parse import quote
 
 import bcrypt
 
+from src import constants
 
-def camel_to_snake(name):
+
+def camel_to_snake(source: str) -> str:
     return "".join(
         "_" + char.lower() if char.isupper() and i != 0 else char.lower()
-        for i, char in enumerate(name)
+        for i, char in enumerate(source)
     )
+
+
+def snake_to_camel(source: str, sep: str = "_") -> str:
+    return "".join(word[0].upper() + word[1:] for word in source.split(sep) if word)
 
 
 def consists_of(source: str, characters: str) -> bool:
@@ -134,6 +140,29 @@ def slugify(
         text = secrets.token_urlsafe(16)
 
     return text
+
+
+def email_to_nickname(email: str) -> str:
+    source = email.split("@")[0]
+
+    prefixes_to_remove = ["mail."]
+
+    for prefix in prefixes_to_remove:
+        source = source.removeprefix(prefix)
+
+    string = ""
+    for char in source:
+        if char in ".-+":
+            if not string.endswith("_"):
+                string += "_"
+            continue
+
+        string += char
+
+    if len(string) < constants.USER_NICKNAME_MIN:
+        string += "_" + secrets.token_hex(constants.USER_NICKNAME_MIN - len(string) - 1)
+
+    return string
 
 
 def lower(s: str | list[str]) -> str | list[str]:

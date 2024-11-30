@@ -25,4 +25,6 @@ class User(Object):
 
 
 class FullUser(User):
-    email: EmailStr = Field(description="User's email")
+    email: EmailStr | None = Field(
+        description="User's email. May be null in case of login with OAuth"
+    )

@@ -13,6 +13,7 @@ from dramatiq.brokers.redis import RedisBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
+from src.scheme import APIError
 
 if "pytest" not in sys.modules:
     broker = RedisBroker(url=settings.redis.url)
@@ -117,3 +118,74 @@ async def periodiq_drop_expired_tokens(session: AsyncSession):
 
     log("Dropping all expired tokens")
     await drop_expired_tokens(session)
+
+
+@dramatiq.actor(max_retries=3)
+@with_session
+async def refresh_thirdparty_token(session: AsyncSession, token_id: int) -> None:
+    from src.oauth_providers import get_provider_instance, OAuthToken
+    from src.models import ThirdpartyToken
+    from src.util import now
+
+    now_ = now()
+
+    token: ThirdpartyToken | None = await session.get(
+        ThirdpartyToken, token_id, options=(joinedload(ThirdpartyToken.identity),)
+    )
+
+    if not token:
+        log(f"Token {token_id} not found")
+        return
+
+    # Remove expired tokens
+    if now_ > token.refresh_before:
+        log(f"Token {token_id} expired. Deleting...")
+        await session.delete(token)
+        await session.commit()
+        return
+
+    provider = get_provider_instance(token.identity.provider)
+
+    # Remove identities with non-existing providers
+    if provider is None:
+        log(
+            f"Provider for token {token_id} - {token.identity.provider} not found. Deleting identity..."
+        )
+        await session.delete(token.identity)
+        return
+
+    oauth_token = OAuthToken(
+        access_token=token.access_token,
+        token_type=token.token_type,
+        refresh_token=token.refresh_token,
+        refresh_after=token.refresh_after,
+        refresh_before=token.refresh_before,
+        save_token=True,
+    )
+
+    try:
+        new_token = await provider.refresh_token(oauth_token)
+    except APIError as e:
+        message = e.extra.get("message")
+        match message:
+            case "Token has expired":
+                await session.delete(token)
+                await session.commit()
+                return
+        raise
+
+    now_ = now()
+
+    token.access_token = new_token.access_token
+    token.token_type = new_token.token_type
+    token.refresh_token = new_token.refresh_token
+    token.refresh_after = new_token.refresh_after
+    token.refresh_before = new_token.refresh_before
+
+    await session.commit()
+
+    delay = max(0, int((token.refresh_after - now_).total_seconds() * 1000))
+    refresh_thirdparty_token.send_with_options(
+        kwargs=dict(token_id=token_id),
+        delay=delay,
+    )

@@ -17,11 +17,12 @@ from .model import SchemeModel
 from .image import UploadImage
 from .error import define_error
 from .pagination import Paginated
+from .providers import OAuthProvider
 from .composition import Composition
+from .providers import ContentProvider
 from .error import ValidationErrorModel
 from .error import define_error_category
 from .composition import CompositionVariant
-from .content_provider import ContentProvider
 
 
 __all__ = [
@@ -44,6 +45,7 @@ __all__ = [
     "UploadImage",
     "Composition",
     "define_error",
+    "OAuthProvider",
     "ContentProvider",
     "CompositionVariant",
     "ValidationErrorModel",

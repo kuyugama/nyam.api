@@ -36,3 +36,27 @@ content_providers:
     classname: HikkaContentProvider
     args:
       endpoint: https://api.hikka.io/
+
+oauth_providers:
+  hikka:
+    name: Hikka
+    description: "Hikka.io oauth provider"
+    classname: HikkaOAuthProvider
+    args:
+      auth_url: https://hikka.io/oauth
+      api_url: https://api.hikka.io/
+      scopes:
+        - read:user-details
+        - readlist
+
+  google:
+    name: Google
+    description: "Google.com oauth provider"
+    classname: GoogleOAuthProvider
+    args:
+      auth_url: https://accounts.google.com/o/oauth2/v2/auth
+      token_url: https://oauth2.googleapis.com/token
+      user_url: https://www.googleapis.com/userinfo/v2/me
+      redirect_url: https://nyam.online/oauth/google
+      scopes:
+        - https://www.googleapis.com/auth/userinfo.email
