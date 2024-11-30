@@ -330,4 +330,7 @@ def email_to_nickname(email: str) -> str:
 
         string += char
 
+    if len(string) < constants.USER_NICKNAME_MIN:
+        string += secrets.token_hex(constants.USER_NICKNAME_MIN - len(string))
+
     return string

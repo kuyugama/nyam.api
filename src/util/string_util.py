@@ -7,6 +7,8 @@ from urllib.parse import quote
 
 import bcrypt
 
+from src import constants
+
 
 def camel_to_snake(source: str) -> str:
     return "".join(
@@ -156,6 +158,9 @@ def email_to_nickname(email: str) -> str:
             continue
 
         string += char
+
+    if len(string) < constants.USER_NICKNAME_MIN:
+        string += "_" + secrets.token_hex(constants.USER_NICKNAME_MIN - len(string) - 1)
 
     return string
 
