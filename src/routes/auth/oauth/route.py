@@ -3,16 +3,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Role
 from ..service import create_token
+from .scheme import FullOAuthProvider
 from src import scheme, oauth_providers
 from src.database import acquire_session
 from src.routes.auth.oauth import service
+from tasks import refresh_thirdparty_token
 from src.oauth_providers import OAuthToken, OAuthUser, BaseOAuthProvider
 
 from src.routes.auth.oauth.dependencies import (
     require_oauth_user,
     require_oauth_token,
-    require_oauth_provider,
     require_default_role,
+    require_oauth_provider,
 )
 
 router = APIRouter(prefix="/oauth")
@@ -53,16 +55,29 @@ async def signin_using_oauth(
         )
 
     if token.save_token:
-        await service.save_oauth_token(session, token, identity)
+        thirdparty = await service.save_oauth_token(session, token, identity)
+
+        refresh_thirdparty_token.send_with_options(
+            kwargs=dict(token_id=thirdparty.id),
+            delay=thirdparty.created_at - thirdparty.refresh_after,
+        )
 
     return await create_token(session, identity.user)
 
 
 @router.get(
-    "/{identifier}/url",
-    summary="Отримати посилання входу через OAuth провайдер",
-    operation_id="get_oauth_url",
-    response_model=str,
+    "/{identifier}",
+    summary="Отримати інформацію про OAuth провайдера",
+    operation_id="get_oauth_provider",
+    response_model=FullOAuthProvider,
 )
-def get_oauth_url(provider: BaseOAuthProvider = Depends(require_oauth_provider)):
-    return provider.get_url()
+def get_oauth_url(identifier: str, provider: BaseOAuthProvider = Depends(require_oauth_provider)):
+    entry = oauth_providers.get_provider(identifier)
+    assert entry is not None
+
+    return dict(
+        url=provider.get_url(),
+        name=entry["name"],
+        description=entry["description"],
+        identifier=identifier,
+    )

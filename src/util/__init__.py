@@ -18,6 +18,7 @@ from .fastapi_util import has_errors
 from .hash_util import cache_key_hash
 from .string_util import verify_payload
 from .string_util import camel_to_snake
+from .string_util import snake_to_camel
 from .pydantic_util import format_error
 from .datetime_util import utc_timestamp
 from .sqlalchemy_util import update_by_pk
@@ -48,6 +49,7 @@ __all__ = [
     "utc_timestamp",
     "cache_key_hash",
     "camel_to_snake",
+    "snake_to_camel",
     "verify_payload",
     "upload_file_obj",
     "email_to_nickname",

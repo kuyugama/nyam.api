@@ -13,18 +13,19 @@ import src
 import src.permissions
 from src import util, constants
 from src.util import now, secure_hash
+
 from src.models import (
     User,
     Token,
     Role,
-    Composition,
     Genre,
-    CompositionVariant,
     Volume,
     Chapter,
     TextPage,
-    UploadImage,
     ImagePage,
+    UploadImage,
+    Composition,
+    CompositionVariant,
 )
 
 
@@ -315,3 +316,18 @@ def assert_composition(source: dict[str, Any], composition: Composition):
         variants=composition.variants,
         id=composition.id,
     )
+
+
+def email_to_nickname(email: str) -> str:
+    source = email.split("@")[0]
+
+    string = ""
+    for char in source:
+        if char in ".-+":
+            if not string.endswith("_"):
+                string += "_"
+            continue
+
+        string += char
+
+    return string

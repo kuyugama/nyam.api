@@ -7,18 +7,20 @@ from typing import Union, Mapping
 permission_registry = ["*"]
 
 
-def gather_permissions(root: type["Permission"], prefix: str = "") -> list[str]:
-    annotations = inspect.get_annotations(root)
+def gather_permissions(root: type["Permission"], prefix: str = "") -> filter:
     permissions = [prefix + "*"]
 
-    for name, type_ in annotations.items():
+    for name, type_ in root.space.items():
         name = name.replace("_", "-")
         if issubclass(type_, Permission):
             permissions.extend(gather_permissions(type_, prefix + name + "."))
         else:
             permissions.append(prefix + name)
 
-    return permissions
+    if not root.space:
+        permissions = [prefix.strip(".")]
+
+    return filter(lambda x: x not in permission_registry, permissions)
 
 
 class Permission(str):
@@ -41,17 +43,20 @@ class Permission(str):
         print(user.own.update_info | user.update_info nm)
     """
 
-    def __init__(self, permission: str | None = None):
-        self.permission = permission or camel_to_snake(type(self).__qualname__).replace("_", "-")
-        self.space = type(self).__annotations__
+    space: dict[str, type] = {}
 
-        if permission is None:
-            permission_registry.extend(
-                sorted(gather_permissions(type(self), self.permission + "."))
-            )
+    def __init_subclass__(cls, **kwargs):
+        cls.space = inspect.get_annotations(cls)
+
+    def __init__(self, permission: str | None = None):
+        self.permission = permission or camel_to_snake(type(self).__qualname__.strip("_")).replace(
+            "_", "-"
+        )
+
+        permission_registry.extend(sorted(gather_permissions(type(self), self.permission + ".")))
 
     def use_space(self, space: type):
-        self.space = {} if space is str else space.__annotations__
+        self.space = inspect.get_annotations(space)
         return self
 
     def __str__(self):

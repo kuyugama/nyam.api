@@ -11,6 +11,7 @@ __all__ = [
     "get_provider",
     "provider_registry",
     "BaseOAuthProvider",
+    "get_provider_instance",
 ]
 
 
@@ -44,3 +45,11 @@ for provider_name in settings.oauth_providers:
 
 def get_provider(name: str) -> _ProviderRegistryEntry | None:
     return provider_registry.get(name, None)
+
+
+def get_provider_instance(name: str) -> BaseOAuthProvider | None:
+    entry = get_provider(name)
+    if entry is None:
+        return None
+
+    return entry["class_"](**entry["args"])

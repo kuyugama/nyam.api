@@ -8,11 +8,15 @@ from urllib.parse import quote
 import bcrypt
 
 
-def camel_to_snake(name):
+def camel_to_snake(source: str) -> str:
     return "".join(
         "_" + char.lower() if char.isupper() and i != 0 else char.lower()
-        for i, char in enumerate(name)
+        for i, char in enumerate(source)
     )
+
+
+def snake_to_camel(source: str, sep: str = "_") -> str:
+    return "".join(word[0].upper() + word[1:] for word in source.split(sep) if word)
 
 
 def consists_of(source: str, characters: str) -> bool:

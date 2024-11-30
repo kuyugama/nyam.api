@@ -14,12 +14,12 @@ provider_not_found = define_error("provider-not-found", "OAuth provider not foun
 
 @provider_not_found.mark
 def require_oauth_provider(identifier: str) -> oauth_providers.BaseOAuthProvider:
-    entry = oauth_providers.get_provider(identifier)
+    provider = oauth_providers.get_provider_instance(identifier)
 
-    if not entry:
+    if not provider:
         raise provider_not_found
 
-    return entry["class_"](**entry["args"])
+    return provider
 
 
 async def require_oauth_token(
