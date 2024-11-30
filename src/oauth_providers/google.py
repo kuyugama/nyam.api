@@ -4,8 +4,8 @@ from aiohttp import ClientSession
 from starlette.datastructures import URL
 
 from config import settings
+from ..util import email_to_nickname
 from .base import BaseOAuthProvider, OAuthUser, OAuthToken, oauth_error
-from ..util import slugify, email_to_nickname
 
 
 class GoogleOAuthProvider(BaseOAuthProvider):
@@ -35,7 +35,7 @@ class GoogleOAuthProvider(BaseOAuthProvider):
                 scope=" ".join(self.scopes),
                 response_type="code",
                 access_type="offline",
-                client_id=settings.auth_secrets.google.client.id,
+                client_id=settings.oauth_secrets.google.client.id,
                 redirect_uri=self.redirect_url,
             )
             .components.geturl()
@@ -49,8 +49,8 @@ class GoogleOAuthProvider(BaseOAuthProvider):
                     self.token_url,
                     data=dict(
                         grant_type="authorization_code",
-                        client_id=settings.auth_secrets.google.client.id,
-                        client_secret=settings.auth_secrets.google.client.secret,
+                        client_id=settings.oauth_secrets.google.client.id,
+                        client_secret=settings.oauth_secrets.google.client.secret,
                         code=query.get("code"),
                         redirect_uri=self.redirect_url,
                     ),

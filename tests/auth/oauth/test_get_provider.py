@@ -25,7 +25,7 @@ async def test_normal(client, provider):
     match provider:
         case "hikka":
             base_url = settings.oauth_providers.hikka.args.auth_url
-            reference = settings.auth_secrets.hikka.client.id
+            reference = settings.oauth_secrets.hikka.client.id
             scope = settings.oauth_providers.hikka.args.scopes
 
             expected_url = URL(base_url).replace_query_params(
@@ -36,7 +36,7 @@ async def test_normal(client, provider):
 
         case "google":
             base_url = settings.oauth_providers.google.args.auth_url
-            reference = settings.auth_secrets.google.client.id
+            reference = settings.oauth_secrets.google.client.id
             scope = settings.oauth_providers.google.args.scopes
             redirect_url = settings.oauth_providers.google.args.redirect_url
 

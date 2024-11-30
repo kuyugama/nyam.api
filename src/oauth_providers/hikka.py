@@ -22,7 +22,7 @@ class HikkaOAuthProvider(BaseOAuthProvider):
         return (
             URL(self.auth_url)
             .replace_query_params(
-                reference=settings.auth_secrets.hikka.client.id, scope=",".join(self.scopes)
+                reference=settings.oauth_secrets.hikka.client.id, scope=",".join(self.scopes)
             )
             .components.geturl()
         )
@@ -36,7 +36,7 @@ class HikkaOAuthProvider(BaseOAuthProvider):
                 "/auth/token",
                 json={
                     "request_reference": query["reference"],
-                    "client_secret": settings.auth_secrets.hikka.client.secret,
+                    "client_secret": settings.oauth_secrets.hikka.client.secret,
                 },
             )
 
