@@ -3,9 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.scheme import APIError
 from src.util import has_errors
+from src import constants, scheme
 from src.models import Token, User
+from src.permissions import permissions
 from src.database import acquire_session
-from src import constants, scheme, permissions
 from src.service import get_role_by_name, get_user_by_nickname
 from src.routes.users.scheme import UpdateUserBody, UpdateOtherUserBody
 

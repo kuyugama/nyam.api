@@ -1,6 +1,8 @@
-from src import permissions
+from src.permissions import permissions
+from src.util import merge_permissions
 
 from tests import requests
+from tests.helpers import permissions_to_json
 
 
 async def test_title(client, role_unverified, master_key):
@@ -27,7 +29,7 @@ async def test_permissions(client, role_unverified, master_key):
     )
     print(response.json())
     assert response.status_code == 200
-    assert response.json()["permissions"] == new_permissions
+    assert response.json()["permissions"] == permissions_to_json(new_permissions)
 
 
 async def test_permissions_merge(client, role_user, master_key):
@@ -41,4 +43,6 @@ async def test_permissions_merge(client, role_user, master_key):
     )
     print(response.json())
     assert response.status_code == 200
-    assert response.json()["permissions"] == role_user.permissions | new_permissions
+    assert response.json()["permissions"] == permissions_to_json(
+        merge_permissions(role_user.permissions, new_permissions)
+    )

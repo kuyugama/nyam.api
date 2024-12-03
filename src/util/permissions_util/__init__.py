@@ -19,8 +19,16 @@ def check_permissions(
     available: Mapping[str | tuple[str, ...] | Permission, bool],
 ) -> bool:
     for required_entry in required:
+        if isinstance(required_entry, Permission):
+            required_entry = required_entry.parts
+
         for available_entry, allowed in available.items():
-            if satisfies(available_entry, required_entry) and not allowed:
-                return False
+            if isinstance(available_entry, Permission):
+                available_entry = available_entry.parts
+
+            if satisfies(available_entry, required_entry) and allowed:
+                break
+        else:
+            return False
 
     return True

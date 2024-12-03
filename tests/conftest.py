@@ -8,12 +8,12 @@ from PIL import Image
 import config
 import asyncio
 from tests import helpers
-from src import permissions
 from src.app import make_app
 from datetime import timedelta
 from src.models.base import Base
 from src.util import secure_hash
 from contextlib import ExitStack
+from src.permissions import permissions
 from src.database import session_holder
 from pytest_postgresql import factories
 from sqlalchemy import make_url, URL, delete
@@ -154,7 +154,7 @@ async def role_unverified(session):
         0,
         default=True,
         title="Unverified user",
-        permissions={},
+        permissions_={},
     )
 
 
@@ -177,7 +177,7 @@ async def role_translator(session):
         11,
         default=False,
         title="Translator",
-        permissions={
+        permissions_={
             permissions.user.own.update_info: True,
             permissions.content_variant["*"]: True,
         },
@@ -192,7 +192,7 @@ async def role_moderator(session):
         20,
         default=False,
         title="Moderator",
-        permissions={
+        permissions_={
             permissions.user.update_info: True,
             permissions.user.own.update_info: True,
         },
@@ -207,15 +207,14 @@ async def role_admin(session):
         30,
         default=False,
         title="Administrator",
-        permissions={
-            permissions.volume["*"]: True,  # noqa
-            permissions.chapter["*"]: True,  # noqa
-            permissions.content["*"]: True,
-            permissions.page_text["*"]: True,  # noqa
-            permissions.page_image["*"]: True,  # noqa
+        permissions_={
+            permissions.volume.__: True,  # noqa
+            permissions.chapter.__: True,  # noqa
+            permissions.content.__: True,
+            permissions.page.__.__: True,
             permissions.override_author: True,
             permissions.user.update_info: True,
-            permissions.content_variant["*"]: True,
+            permissions.content_variant.__: True,
             permissions.user.own.update_info: True,
             permissions.user.role_management: True,
             permissions.user.permission_management: True,

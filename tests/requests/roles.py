@@ -1,6 +1,8 @@
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 
+from tests.helpers import permissions_to_json
+
 
 async def create_role(
     client: TestClient,
@@ -12,6 +14,9 @@ async def create_role(
     base_role: str = None,
     weight: int | None = None,
 ) -> Response:
+    if permissions:
+        permissions = permissions_to_json(permissions)
+
     if permissions is None:
         permissions = {}
 
@@ -42,6 +47,9 @@ async def update_role(
     permissions: dict[str, bool] = None,
     merge_permissions: bool = False,
 ):
+    if permissions:
+        permissions = permissions_to_json(permissions)
+
     return await client.patch(
         f"/roles/{name}",
         headers={"Master-Key": master_key},

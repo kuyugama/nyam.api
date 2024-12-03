@@ -1,8 +1,9 @@
 from async_asgi_testclient import TestClient
 
-from src.util import utc_timestamp
-from src import permissions
 from tests import requests
+from src.util import utc_timestamp
+from src.permissions import permissions
+from tests.helpers import permissions_to_json
 
 
 async def test_normal(client: TestClient, user_regular, token_regular):
@@ -23,7 +24,7 @@ async def test_normal(client: TestClient, user_regular, token_regular):
             "weight": user_regular.role.weight,
         },
         "created_at": int(utc_timestamp(user_regular.created_at)),
-        "permissions": {permissions.user.own.update_info: True},
+        "permissions": permissions_to_json({permissions.user.own.update_info: True}),
         "updated_at": user_regular.updated_at,
         "id": user_regular.id,
     }

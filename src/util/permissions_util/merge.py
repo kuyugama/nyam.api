@@ -27,24 +27,33 @@ def merge_permissions(
     """
     Merge second permission mapping into first
     """
-    result: dict[Permission, bool] = {}
+    simple = {
+        permission: (permission if not isinstance(permission, Permission) else permission.parts)
+        for permission in {**first, **second}
+    }
+
+    result: dict[str | Permission | tuple[str, ...], bool] = {}
 
     for first_permission, first_allowed in first.items():
-        left = first_permission
-        if isinstance(first_permission, Permission):
-            left = first_permission.parts
 
         for second_permission, second_allowed in second.items():
-
-            right = second_permission
-            if isinstance(second_permission, Permission):
-                right = second_permission.parts
-
-            if satisfies(right, left):
+            if satisfies(simple[second_permission], simple[first_permission]):
                 if second_permission not in result:
                     result[second_permission] = second_allowed
                 break
         else:
             result[first_permission] = first_allowed
+
+    for extra_permission, allowed in second.items():
+        for available in result.keys():
+
+            if satisfies(simple[available], simple[extra_permission]):
+                break
+        else:
+            result[extra_permission] = allowed
+
+    print(first)
+    print(second)
+    print(result)
 
     return result

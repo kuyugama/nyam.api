@@ -16,6 +16,7 @@ from src.util import (
     compress_png,
     upload_file_obj,
     filter_image_size,
+    merge_permissions,
 )
 
 
@@ -53,7 +54,7 @@ async def update_user(
 
     if isinstance(body, UpdateOtherUserBody) and body.permissions:
         if body.merge_permissions:
-            user.local_permissions.update(body.permissions)
+            user.local_permissions = merge_permissions(user.local_permissions, body.permissions)
         else:
             user.local_permissions = body.permissions
 

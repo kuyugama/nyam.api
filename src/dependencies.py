@@ -146,7 +146,7 @@ def require_permissions(*permissions: str) -> params.Depends:
         token: Token | None = Depends(optional_token),
     ):
         if not check_permissions(master_granted, token, *permissions):
-            raise permission_denied(extra=dict(permissions=", ".join(permissions)))
+            raise permission_denied(extra=dict(permissions=", ".join(map(str, permissions))))
 
     setattr(dependency, "permissions", permissions)
 
