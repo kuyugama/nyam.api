@@ -83,7 +83,7 @@ def render_route_permissions(app: FastAPI):
             if not hasattr(dependency, "permissions"):
                 continue
 
-            permissions = "## 🛡Необхідні права: ️" + " ".join(dependency.permissions)
+            permissions = "## 🛡Необхідні права: ️" + " ".join(map(str, dependency.permissions))
 
             route.description = (
                 route.description + "\n\n" + permissions if route.description else permissions

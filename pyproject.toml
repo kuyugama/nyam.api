@@ -45,5 +45,8 @@ pythonpath = ["."]
 python_functions = "test_*"
 python_files = "test_*.py"
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
 
 

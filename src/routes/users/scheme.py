@@ -4,9 +4,9 @@ from string import ascii_letters, digits
 
 from pydantic import Field, field_validator
 
-from src import permissions
+from src.util import consists_of
 from src.scheme.model import SchemeModel
-from src.util import permission_registry, consists_of
+from src.permissions import permissions, permission_registry
 
 
 class UpdateUserBody(SchemeModel):

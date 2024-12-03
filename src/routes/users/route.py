@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import scheme
-from src import permissions
 from src.routes.users import service
+from src.permissions import permissions
 from src.models import Token, User, Role
 from src.database import acquire_session
 from .scheme import UpdateUserBody, UpdateOtherUserBody

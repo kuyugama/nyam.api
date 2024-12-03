@@ -74,7 +74,9 @@ async def test_normal(client, role_unverified, provider, oauth_user):
 
 
 @pytest.mark.parametrize("provider", settings.oauth_providers.keys())
-async def test_nickname_occupied(client, role_unverified, user_regular, provider, oauth_user, session):
+async def test_nickname_occupied(
+    client, role_unverified, user_regular, provider, oauth_user, session
+):
     user_regular.nickname = oauth_user.nickname
     await session.commit()
 

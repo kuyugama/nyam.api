@@ -1,25 +1,29 @@
-from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, UploadFile
 
-from src.models import Chapter, Volume
 from . import service
-from src import scheme, permissions
+from src import scheme
+from src.models import Chapter, Volume
+from src.permissions import permissions
+from .scheme import PublishTextPageBody
 from src.database import acquire_session
-from src.dependencies import (
-    require_page,
-    require_chapter,
-    file_mime,
-    require_volume,
-    require_permissions,
-)
 from src.util import get_offset_and_limit, paginated_response
+
 from .dependencies import (
-    validate_publish_text_page,
     validate_image_page_file,
     validate_image_page_index,
+    validate_publish_text_page,
     validate_publish_image_permissions,
 )
-from .scheme import PublishTextPageBody
+
+from src.dependencies import (
+    file_mime,
+    require_page,
+    require_volume,
+    require_chapter,
+    require_permissions,
+)
+
 
 router = APIRouter(prefix="/chapter")
 
@@ -59,7 +63,7 @@ async def get_chapter(chapter: Chapter = Depends(require_chapter)):
     response_model=scheme.TextPage,
     dependencies=[
         Depends(validate_publish_image_permissions),
-        require_permissions(permissions.page_text.create),
+        require_permissions(permissions.page.text.create),
     ],
 )
 async def publish_text_page(
@@ -77,7 +81,7 @@ async def publish_text_page(
     response_model=scheme.ImagePage,
     dependencies=[
         Depends(validate_publish_image_permissions),
-        require_permissions(permissions.page_image.create),
+        require_permissions(permissions.page.image.create),
     ],
 )
 async def publish_image_page(

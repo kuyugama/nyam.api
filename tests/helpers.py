@@ -3,21 +3,21 @@ import copy
 import inspect
 import hashlib
 import secrets
-from typing import Any
 from pathlib import Path
+from typing import Any, Sequence
 from datetime import timedelta, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import src
-import src.permissions
 from src import util, constants
 from src.util import now, secure_hash
+from src.permissions import permissions
+from src.util.permissions_util import Permission, generate_permission
 
 from src.models import (
     User,
-    Token,
     Role,
+    Token,
     Genre,
     Volume,
     Chapter,
@@ -43,11 +43,11 @@ async def create_role(
     weight: int,
     default: bool = False,
     title: str = "Title",
-    permissions: dict[str, bool] = None,
+    permissions_: dict[str, bool] = None,
 ) -> Role:
-    if permissions is None:
-        permissions = {
-            src.permissions.user.own.update_info: True,
+    if permissions_ is None:
+        permissions_ = {
+            permissions.user.own.update_info: True,
         }
 
     role = Role(
@@ -55,7 +55,7 @@ async def create_role(
         title=title,
         weight=weight,
         default=default,
-        permissions=permissions,
+        permissions=permissions_to_json(permissions_),
     )
     session.add(role)
 
@@ -334,3 +334,33 @@ def email_to_nickname(email: str) -> str:
         string += secrets.token_hex(constants.USER_NICKNAME_MIN - len(string))
 
     return string
+
+
+def permissions_to_json(
+    permissions: (
+        dict[str | tuple[str, ...] | Permission, bool]
+        | Sequence[str | tuple[str, ...] | Permission]
+        | None
+    )
+) -> dict[str, bool] | list[str] | None:
+    if permissions is None:
+        return permissions
+
+    if isinstance(permissions, dict):
+        result = {}
+        for permission, allowed in permissions.items():
+            if isinstance(permission, tuple):
+                permission = generate_permission(permission, ())
+
+            result[str(permission)] = allowed
+
+        return result
+
+    result = []
+    for permission in permissions:
+        if isinstance(permission, tuple):
+            permission = generate_permission(permission, ())
+
+        result.append(permission)
+
+    return result

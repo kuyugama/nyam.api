@@ -14,12 +14,12 @@ import config
 from src import scheme
 from src.database import session_holder
 from src.routes import router as main_router
+from src.permissions import permission_registry
 from src.ratelimit import RatelimitUser, authentication_func, memory_ranking, memory_store
 
 from src.util import (
     format_error,
     setup_route_errors,
-    permission_registry,
     render_route_permissions,
 )
 
