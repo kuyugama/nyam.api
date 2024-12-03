@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import service
-from src import scheme, permissions
+from src import scheme
+from .scheme import CreateVolumeBody
+from src.permissions import permissions
 from src.database import acquire_session
-from .dependencies import require_composition_variant, validate_create_volume
-from src.dependencies import require_page, require_permissions
 from src.models import CompositionVariant
 from src.util import get_offset_and_limit, paginated_response
-from .scheme import CreateVolumeBody
+from src.dependencies import require_page, require_permissions
+from .dependencies import require_composition_variant, validate_create_volume
 
 router = APIRouter(prefix="/variant")
 

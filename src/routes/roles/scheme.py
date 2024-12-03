@@ -6,7 +6,7 @@ from pydantic import Field, field_validator
 from src import scheme
 from src.scheme import Paginated
 from src.scheme.model import SchemeModel
-from src.util.permissions_util import permission_registry
+from src.permissions import permission_registry
 
 
 __all__ = [

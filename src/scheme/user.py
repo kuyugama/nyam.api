@@ -2,8 +2,8 @@ from pydantic import EmailStr, Field
 
 from .role import Role
 from .model import Object
-from src import permissions
 from .image import UploadImage
+from src.permissions import permissions
 
 
 class User(Object):

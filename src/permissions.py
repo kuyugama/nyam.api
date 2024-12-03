@@ -1,70 +1,61 @@
-from src.util.permissions_util import Permission
+from src.util.permissions_util import Permission, parse_schema, generate_permissions
+
+permissions_schema = """
+*
+user.*
+user.own.*
+user.own.update-info
+user.permission-management
+user.role-management
+user.update-info
+content.*.publish
+content.*.delete
+content.*.update
+content.*.*
+content.manga.*
+content.manga.delete
+content.manga.publish
+content.manga.update
+content.manhwa.*
+content.manhwa.delete
+content.manhwa.publish
+content.manhwa.update
+content.manihwa.*
+content.manihwa.delete
+content.manihwa.publish
+content.manihwa.update
+content.ranobe.*
+content.ranobe.delete
+content.ranobe.publish
+content.ranobe.update
+content-variant.*
+content-variant.create
+content-variant.delete
+content-variant.update
+volume.*
+volume.create
+volume.delete
+volume.update
+chapter.*
+chapter.create
+chapter.delete
+chapter.update
+page.*.create
+page.*.update
+page.*.delete
+page.*.*
+page.text.*
+page.text.create
+page.text.delete
+page.text.update
+page.image.*
+page.image.create
+page.image.delete
+page.image.update
+override-author
+"""
 
 
-class _UserOwn(Permission):
-    update_info: str
+permissions = Permission(schema=parse_schema(permissions_schema))
 
-
-class _User(Permission):
-    own: _UserOwn
-    update_info: str
-    role_management: str
-    permission_management: str
-
-
-user = _User()
-
-
-class _ContentEntry(Permission):
-    publish: str
-    delete: str
-    update: str
-
-
-class _Content(Permission):
-    manga: _ContentEntry
-    manhwa: _ContentEntry
-    manihwa: _ContentEntry
-    ranobe: _ContentEntry
-
-
-content = _Content()
-
-
-class _ContentVariant(Permission):
-    create: str
-    delete: str
-    update: str
-
-
-content_variant = _ContentVariant()
-
-
-class _Volume(Permission):
-    create: str
-    delete: str
-    update: str
-
-
-volume = _Volume()
-
-
-class _Chapter(Permission):
-    create: str
-    delete: str
-    update: str
-
-
-chapter = _Chapter()
-
-
-class _Page(Permission):
-    create: str
-    delete: str
-    update: str
-
-
-page_text = _Page("page-text")
-page_image = _Page("page-image")
-
-override_author = Permission("override-author")
+permission_registry = generate_permissions(permissions.schema).splitlines()

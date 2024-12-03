@@ -28,7 +28,7 @@ from .fastapi_util import setup_route_errors
 from .datetime_util import from_utc_timestamp
 from .fastapi_util import route_has_dependency
 from .permissions_util import check_permissions
-from .permissions_util import permission_registry
+from .permissions_util import merge_permissions
 from .fastapi_util import render_route_permissions
 from .sqlalchemy_util import update_within_flush_event
 
@@ -56,10 +56,10 @@ __all__ = [
     "PermissionChecker",
     "filter_image_size",
     "check_permissions",
+    "merge_permissions",
     "from_utc_timestamp",
     "setup_route_errors",
     "paginated_response",
-    "permission_registry",
     "route_has_dependency",
     "get_offset_and_limit",
     "render_route_permissions",

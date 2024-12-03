@@ -9,9 +9,9 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base
 from .role import Role
-from src.util import now
 from src import constants
 from .image import UploadImage
+from src.util import now, merge_permissions
 
 __all__ = ["User"]
 
@@ -57,7 +57,7 @@ class User(Base):
     @property
     def permissions(self):
         """Combine user's role and own permissions."""
-        return self.role.permissions | self.local_permissions
+        return merge_permissions(self.role.permissions, self.local_permissions)
 
     @property
     def online(self):

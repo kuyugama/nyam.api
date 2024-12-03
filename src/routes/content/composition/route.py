@@ -3,7 +3,8 @@ from fastapi import APIRouter, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import service
-from src import scheme, permissions
+from src import scheme
+from src.permissions import permissions
 from src.models import Composition, Token
 from src.database import acquire_session
 from ..dependencies import require_provider
