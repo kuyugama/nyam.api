@@ -12,14 +12,14 @@ def _patch_s3():
         yield
 
 
-async def test_text(client, token_admin, composition, chapter, session):
+async def test_text(client, token_translator, composition, chapter, session):
     composition.style = constants.STYLE_COMPOSITION_RANOBE
     await session.commit()
 
     text = "page text" * 100
     index = 1
     response = await requests.content.create_text_page(
-        client, token_admin.body, chapter.id, text, index
+        client, token_translator.body, chapter.id, text, index
     )
     print(response.json())
     assert response.status_code == 200
@@ -31,11 +31,11 @@ async def test_text(client, token_admin, composition, chapter, session):
     )
 
 
-async def test_image(client, token_admin, image_file, chapter, session):
+async def test_image(client, token_translator, image_file, chapter, session):
     index = 1
     with _patch_s3():
         response = await requests.content.create_image_page(
-            client, token_admin.body, chapter.id, image_file, index
+            client, token_translator.body, chapter.id, image_file, index
         )
     print(response.json())
     assert response.status_code == 200
@@ -46,7 +46,7 @@ async def test_image(client, token_admin, image_file, chapter, session):
     )
 
 
-async def test_text_autoindex(client, token_admin, composition, chapter, page_text, session):
+async def test_text_autoindex(client, token_translator, composition, chapter, page_text, session):
     composition.style = constants.STYLE_COMPOSITION_RANOBE
     await session.commit()
 
@@ -54,7 +54,7 @@ async def test_text_autoindex(client, token_admin, composition, chapter, page_te
     index = None
     expected_index = page_text.index + 1
     response = await requests.content.create_text_page(
-        client, token_admin.body, chapter.id, text, index
+        client, token_translator.body, chapter.id, text, index
     )
     print(response.json())
     assert response.status_code == 200
@@ -66,12 +66,12 @@ async def test_text_autoindex(client, token_admin, composition, chapter, page_te
     )
 
 
-async def test_image_autoindex(client, token_admin, image_file, chapter, page_image, session):
+async def test_image_autoindex(client, token_translator, image_file, chapter, page_image, session):
     index = None
     expected_index = page_image.index + 1
     with _patch_s3():
         response = await requests.content.create_image_page(
-            client, token_admin.body, chapter.id, image_file, index
+            client, token_translator.body, chapter.id, image_file, index
         )
     print(response.json())
     assert response.status_code == 200
@@ -82,14 +82,14 @@ async def test_image_autoindex(client, token_admin, image_file, chapter, page_im
     )
 
 
-async def test_text_insert(client, token_admin, composition, chapter, page_text, session):
+async def test_text_insert(client, token_translator, composition, chapter, page_text, session):
     composition.style = constants.STYLE_COMPOSITION_RANOBE
     await session.commit()
 
     text = "page text" * 100
     index = page_text.index
     response = await requests.content.create_text_page(
-        client, token_admin.body, chapter.id, text, index
+        client, token_translator.body, chapter.id, text, index
     )
     print(response.json())
     assert response.status_code == 200
@@ -105,11 +105,11 @@ async def test_text_insert(client, token_admin, composition, chapter, page_text,
     assert page_text.index == index + 1
 
 
-async def test_image_insert(client, token_admin, chapter, image_file, page_image, session):
+async def test_image_insert(client, token_translator, chapter, image_file, page_image, session):
     index = page_image.index
     with _patch_s3():
         response = await requests.content.create_image_page(
-            client, token_admin.body, chapter.id, image_file, index
+            client, token_translator.body, chapter.id, image_file, index
         )
     print(response.json())
     assert response.status_code == 200

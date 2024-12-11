@@ -52,8 +52,4 @@ def merge_permissions(
         else:
             result[extra_permission] = allowed
 
-    print(first)
-    print(second)
-    print(result)
-
     return result

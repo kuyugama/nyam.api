@@ -1,5 +1,6 @@
 from pydantic import Field
 
+from .team import Team
 from .user import User
 from .role import Role
 from .token import Token
@@ -27,6 +28,7 @@ from .composition import CompositionVariant
 
 __all__ = [
     "Bot",
+    "Team",
     "User",
     "Role",
     "Token",

@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Header, Query, Depends, BackgroundTasks, params, Request, UploadFile, FastAPI
 
 from config import settings
-from .util import cache_key_hash
 from . import service, scheme, util
+from .util import cache_key_hash, requires_permissions
 from src.database import session_holder, acquire_session
 from .models import Token, CompositionVariant, Volume, Chapter
 
@@ -141,14 +141,13 @@ def require_permissions(*permissions: str) -> params.Depends:
     """
 
     @permission_denied.mark
+    @requires_permissions(permissions)
     def dependency(
         master_granted: bool = Depends(master_grant),
         token: Token | None = Depends(optional_token),
     ):
         if not check_permissions(master_granted, token, *permissions):
             raise permission_denied(extra=dict(permissions=", ".join(map(str, permissions))))
-
-    setattr(dependency, "permissions", permissions)
 
     return Depends(dependency)
 

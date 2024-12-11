@@ -5,7 +5,7 @@ from sqlalchemy import select, Select, func, ScalarResult
 from src import constants
 from src.content_providers import ContentProviderComposition
 from .scheme import CreateCompositionVariantBody, CompositionListBody
-from src.models import Composition, UploadImage, CompositionVariant, User, Genre
+from src.models import Composition, UploadImage, CompositionVariant, User, Genre, TeamMember
 
 
 async def get_composition_by_slug(session: AsyncSession, slug: str) -> Composition:
@@ -63,11 +63,15 @@ async def publish_composition_from_provider(
 
 
 async def publish_composition_variant(
-    session: AsyncSession, origin: Composition, body: CreateCompositionVariantBody, author: User
+    session: AsyncSession,
+    origin: Composition,
+    body: CreateCompositionVariantBody,
+    team_member: TeamMember,
 ) -> CompositionVariant:
     variant = CompositionVariant(
         origin=origin,
-        author=author,
+        team=team_member.team,
+        member=team_member,
         status=constants.STATUS_COMPOSITION_VARIANT_PENDING,
         title_local=body.title,
         synopsis_local=body.synopsis,

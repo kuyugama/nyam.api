@@ -14,7 +14,9 @@ from src.models import (
     ImagePage,
     UploadImage,
     CompositionVariant,
+    TeamMember,
 )
+from src.routes.content.chapter.scheme import PublishTextPageBody
 
 from src.scheme import APIError
 from src.util import upload_file_obj
@@ -40,8 +42,16 @@ async def list_chapters(
     )
 
 
-async def create_text_page(session: AsyncSession, chapter: Chapter, body):
-    page = TextPage(chapter=chapter, index=body.index, text=body.text)
+async def create_text_page(
+    session: AsyncSession, chapter: Chapter, body: PublishTextPageBody, team_member: TeamMember
+):
+    page = TextPage(
+        chapter=chapter,
+        index=body.index,
+        text=body.text,
+        team_id=chapter.team_id,
+        member_id=team_member.id,
+    )
 
     session.add(page)
 
@@ -55,7 +65,12 @@ async def get_composition_variant(session: AsyncSession, chapter_id: int) -> Com
 
 
 async def create_image_page(
-    session: AsyncSession, chapter: Chapter, index: int, image: UploadFile, mime: str
+    session: AsyncSession,
+    chapter: Chapter,
+    index: int,
+    image: UploadFile,
+    mime: str,
+    team_member: TeamMember,
 ) -> ImagePage:
     try:
         width, height = Image.open(image.file).size
@@ -77,7 +92,9 @@ async def create_image_page(
         key=key,
     )
 
-    page = ImagePage(image=image, chapter=chapter, index=index)
+    page = ImagePage(
+        image=image, chapter=chapter, index=index, team_id=chapter.team_id, member_id=team_member.id
+    )
 
     session.add_all([image, page])
 

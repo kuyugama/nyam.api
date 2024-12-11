@@ -12,6 +12,9 @@ class Role(Base):
     weight: orm.Mapped[int] = orm.mapped_column(server_default="0", index=True)
     default: orm.Mapped[bool] = orm.mapped_column(sa.Boolean, default=False)
 
+    # Is this role for team member
+    team_member_role: orm.Mapped[bool] = orm.mapped_column(sa.Boolean, default=False)
+
     # Role permissions
     # Keys are actual permission names
     permissions: orm.Mapped[dict[str, bool]] = orm.mapped_column(

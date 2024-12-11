@@ -4,16 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from . import service
 from src import scheme
 from .scheme import CreateChapterBody
-from src.permissions import permissions
 from src.database import acquire_session
-from .dependencies import validate_create_chapter
-from src.models import CompositionVariant, Volume
+from .dependencies import validate_create_chapter, require_team_member
+from src.models import CompositionVariant, Volume, TeamMember
 from src.util import get_offset_and_limit, paginated_response
 
 from src.dependencies import (
     require_page,
     require_volume,
-    require_permissions,
     require_composition_variant,
 )
 
@@ -53,11 +51,11 @@ async def get_volume(volume: Volume = Depends(require_volume)):
     summary="Створити розділ тому",
     operation_id="create_chapter",
     response_model=scheme.Chapter,
-    dependencies=[require_permissions(permissions.chapter.create)],
 )
 async def create_chapter(
     body: CreateChapterBody = Depends(validate_create_chapter),
     volume: Volume = Depends(require_volume),
+    team_member: TeamMember = Depends(require_team_member),
     session: AsyncSession = Depends(acquire_session),
 ):
-    return await service.create_chapter(session, volume, body)
+    return await service.create_chapter(session, volume, body, team_member)

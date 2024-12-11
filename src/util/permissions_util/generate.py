@@ -106,7 +106,7 @@ def generate_pyi(name: str, permissions: Any, indent: int = 0) -> str:
     return result
 
 
-def generate_pyi_file(permissions: Any, output_file: str):
+def generate_pyi_file(permissions: dict[str, Any], output_file: str):
     """Generate .pyi file by permissions schema"""
     header = """# ==================== PERMISSIONS ====================
     # THIS IS GENERATED CODE FOR HELP IDE TO UNDERSTAND PERMISSIONS
@@ -121,15 +121,21 @@ def generate_pyi_file(permissions: Any, output_file: str):
         def sub(self, permission: str | tuple[str, ...]) -> "Permission": ...
         def __getitem__(self, item: str) -> "Permission": ...\n\n"""
 
-    main_class = generate_pyi("root", permissions)
-    content = "".join(
-        [
-            "\n".join(line.removeprefix("    ") for line in header.splitlines()),
-            "\n\n",
-            main_class[:-1],
-            "\n\n",
-            "permissions = root()",
-        ]
-    )
+    content = ""
+
+    for name, permissions in permissions.items():
+        main_class = generate_pyi(f"root_{name}", permissions)
+        content += (
+            "".join(
+                [
+                    "\n".join(line.removeprefix("    ") for line in header.splitlines()),
+                    "\n\n",
+                    main_class[:-1],
+                    "\n\n",
+                    f"{name} = root_{name}()",
+                ]
+            )
+            + "\n\n"
+        )
 
     Path(output_file).write_text(content)

@@ -1,13 +1,14 @@
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import select, delete, func, update
+from sqlalchemy import select, delete, func, update, Select
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.util import now
 from src import constants
 from src.models import (
+    Team,
     Role,
     User,
     Token,
@@ -16,6 +17,7 @@ from src.models import (
     BasePage,
     TextPage,
     ImagePage,
+    TeamMember,
     Composition,
     CompositionVariant,
 )
@@ -25,6 +27,20 @@ IMAGE_TYPE_TO_MODEL = {
     constants.PAGE_TEXT: TextPage,
     constants.PAGE_IMAGE: ImagePage,
 }
+
+
+def variant_options(select: Select) -> Select:
+    member_load = joinedload(CompositionVariant.member).options(
+        joinedload(TeamMember.user).options(joinedload(User.avatar), joinedload(User.role)),
+        joinedload(TeamMember.role),
+    )
+    # TODO: Add loading team logo when this feature is added
+    team_load = joinedload(CompositionVariant.team)
+
+    origin_load = joinedload(CompositionVariant.origin).options(
+        joinedload(Composition.preview), selectinload(Composition.genres)
+    )
+    return select.options(member_load, team_load, origin_load)
 
 
 async def get_token(session: AsyncSession, body: str) -> Token | None:
@@ -63,15 +79,8 @@ async def get_user_by_nickname(session: AsyncSession, nickname: str) -> User | N
 
 
 async def get_composition_variant(session: AsyncSession, variant_id: int) -> CompositionVariant:
-    author_load = joinedload(CompositionVariant.author).options(
-        joinedload(User.avatar), joinedload(User.role)
-    )
-
-    origin_load = joinedload(CompositionVariant.origin).options(
-        joinedload(Composition.preview), selectinload(Composition.genres)
-    )
     return await session.scalar(
-        select(CompositionVariant).filter_by(id=variant_id).options(author_load, origin_load)
+        variant_options(select(CompositionVariant).filter_by(id=variant_id))
     )
 
 
@@ -135,4 +144,16 @@ async def update_next_indexes(
             index=model.index + 1,
         )
         .filter(model.index >= start_index, filter_),
+    )
+
+
+async def get_team(session: AsyncSession, team_id: int) -> Team:
+    return await session.scalar(select(Team).filter_by(id=team_id))
+
+
+async def get_team_member(session: AsyncSession, team_id: int, user_id: int) -> TeamMember:
+    return await session.scalar(
+        select(TeamMember)
+        .filter_by(team_id=team_id, user_id=user_id)
+        .options(joinedload(TeamMember.role), joinedload(TeamMember.team))
     )

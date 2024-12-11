@@ -13,7 +13,7 @@ from datetime import timedelta
 from src.models.base import Base
 from src.util import secure_hash
 from contextlib import ExitStack
-from src.permissions import permissions
+from src.permissions import permissions, team_permissions
 from src.database import session_holder
 from pytest_postgresql import factories
 from sqlalchemy import make_url, URL, delete
@@ -33,6 +33,9 @@ from src.models import (
     UploadImage,
     Composition,
     CompositionVariant,
+    Team,
+    TeamMember,
+    Role,
 )
 
 
@@ -171,6 +174,7 @@ async def role_user(session):
 
 @pytest.fixture
 async def role_translator(session):
+    # noinspection PyTestUnpassedFixture
     return await helpers.create_role(
         session,
         "translator",
@@ -179,7 +183,7 @@ async def role_translator(session):
         title="Translator",
         permissions_={
             permissions.user.own.update_info: True,
-            permissions.content_variant["*"]: True,
+            permissions.team.create: True,
         },
     )
 
@@ -208,16 +212,52 @@ async def role_admin(session):
         default=False,
         title="Administrator",
         permissions_={
-            permissions.volume.__: True,  # noqa
-            permissions.chapter.__: True,  # noqa
             permissions.content.__: True,
-            permissions.page.__.__: True,
             permissions.override_author: True,
             permissions.user.update_info: True,
-            permissions.content_variant.__: True,
             permissions.user.own.update_info: True,
             permissions.user.role_management: True,
             permissions.user.permission_management: True,
+        },
+    )
+
+
+@pytest.fixture
+async def role_team_member(session) -> Role:
+    # noinspection PyTestUnpassedFixture
+    return await helpers.create_role(
+        session,
+        "TeamMember",
+        0,
+        title="Team Member",
+        team_member_role=True,
+        permissions_={
+            team_permissions.content_variant.create: True,
+            team_permissions.volume.create: True,
+            team_permissions.chapter.create: True,
+            team_permissions.page.__.create: True,
+        },
+    )
+
+
+@pytest.fixture
+async def role_team_owner(session) -> Role:
+    # noinspection PyTestUnpassedFixture
+    return await helpers.create_role(
+        session,
+        "TeamOwner",
+        10,
+        title="Team Owner",
+        team_member_role=True,
+        permissions_={
+            team_permissions.content_variant.create: True,
+            team_permissions.volume.create: True,
+            team_permissions.chapter.create: True,
+            team_permissions.page.__.create: True,
+            team_permissions.team.update: True,
+            team_permissions.team.disband: True,
+            team_permissions.member.accept: True,
+            team_permissions.member.manage_roles: True,
         },
     )
 
@@ -230,6 +270,11 @@ def email_user_unverified() -> str:
 @pytest.fixture(scope="session")
 def email_user_regular() -> str:
     return "user@mail.com"
+
+
+@pytest.fixture(scope="session")
+def email_user_translator() -> str:
+    return "translator@mail.com"
 
 
 @pytest.fixture(scope="session")
@@ -297,8 +342,41 @@ async def user_admin(session, hash_password_user, email_user_admin, role_admin) 
 
 
 @pytest.fixture
+async def user_translator(
+    session, hash_password_user, email_user_translator, role_translator
+) -> User:
+    return await helpers.create_user(
+        session,
+        email_user_translator,
+        helpers.email_to_nickname(email_user_translator),
+        role_translator,
+        password_hash=hash_password_user,
+    )
+
+
+@pytest.fixture
+async def team(session, user_translator) -> Team:
+    return await helpers.create_team(session)
+
+
+@pytest.fixture
+async def member_owner(session, team, user_translator, role_team_owner) -> TeamMember:
+    return await helpers.create_team_member(session, user_translator, team, role_team_owner)
+
+
+@pytest.fixture
+async def member_regular(session, team, user_regular, role_team_member) -> TeamMember:
+    return await helpers.create_team_member(session, user_regular, team, role_team_member)
+
+
+@pytest.fixture
 async def token_regular(session, user_regular) -> Token:
     return await helpers.create_token(session, user_regular)
+
+
+@pytest.fixture
+async def token_translator(session, user_translator) -> Token:
+    return await helpers.create_token(session, user_translator)
 
 
 @pytest.fixture
@@ -322,30 +400,30 @@ async def composition(session) -> Composition:
 
 
 @pytest.fixture
-async def composition_variant(session, composition, user_admin) -> CompositionVariant:
+async def composition_variant(session, composition, team, member_owner) -> CompositionVariant:
     return await helpers.create_composition_variant(
-        session, composition, user_admin, "variant-title", "variant-description"
+        session, composition, team, member_owner, "variant-title", "variant-description"
     )
 
 
 @pytest.fixture
-async def volume(session, composition_variant) -> Volume:
-    return await helpers.create_volume(session, composition_variant, 1)
+async def volume(session, member_owner, composition_variant) -> Volume:
+    return await helpers.create_volume(session, member_owner, composition_variant, 1)
 
 
 @pytest.fixture
-async def chapter(session, volume) -> Chapter:
-    return await helpers.create_chapter(session, volume, 1)
+async def chapter(session, member_owner, volume) -> Chapter:
+    return await helpers.create_chapter(session, member_owner, volume, 1)
 
 
 @pytest.fixture
-async def page_text(session, chapter) -> TextPage:
-    return await helpers.create_text_page(session, chapter, 1, "page content")
+async def page_text(session, member_owner, chapter) -> TextPage:
+    return await helpers.create_text_page(session, member_owner, chapter, 1, "page content")
 
 
 @pytest.fixture
-async def page_image(session, chapter, upload_image) -> ImagePage:
-    return await helpers.create_image_page(session, chapter, 1, upload_image)
+async def page_image(session, member_owner, chapter, upload_image) -> ImagePage:
+    return await helpers.create_image_page(session, member_owner, chapter, 1, upload_image)
 
 
 @pytest.fixture

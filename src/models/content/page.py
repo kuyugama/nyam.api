@@ -5,10 +5,11 @@ from ..base import Base
 from src import constants
 from .chapter import Chapter
 from ..image import UploadImage
+from ..mixins import OwnedByTeamMixin
 from src.util import update_within_flush_event
 
 
-class BasePage(Base):
+class BasePage(Base, OwnedByTeamMixin):
     __tablename__ = "service_pages"
     __mapper_args__ = {
         "polymorphic_identity": "default",

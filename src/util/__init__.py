@@ -26,6 +26,7 @@ from .image_util import filter_image_size
 from .string_util import email_to_nickname
 from .fastapi_util import setup_route_errors
 from .datetime_util import from_utc_timestamp
+from .fastapi_util import requires_permissions
 from .fastapi_util import route_has_dependency
 from .permissions_util import check_permissions
 from .permissions_util import merge_permissions
@@ -60,6 +61,7 @@ __all__ = [
     "from_utc_timestamp",
     "setup_route_errors",
     "paginated_response",
+    "requires_permissions",
     "route_has_dependency",
     "get_offset_and_limit",
     "render_route_permissions",

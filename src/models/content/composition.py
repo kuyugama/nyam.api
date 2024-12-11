@@ -5,11 +5,11 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import String, ForeignKey, event, Connection
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import Base
-from src.models.user import User
-from src.models import m2m_tables
-from src.models.image import UploadImage
-from src.models.content.genre import Genre
+from ..base import Base
+from .genre import Genre
+from .. import m2m_tables
+from ..image import UploadImage
+from ..mixins import OwnedByTeamMixin
 from src.util import update_within_flush_event
 
 
@@ -64,14 +64,11 @@ class Composition(Base):
         return self.synopsis_uk or self.synopsis_en
 
 
-class CompositionVariant(Base):
+class CompositionVariant(Base, OwnedByTeamMixin):
     __tablename__ = "service_composition_variants"
 
     origin_id = mapped_column(ForeignKey(Composition.id, ondelete="CASCADE"))
     origin: Mapped[Composition] = relationship(foreign_keys=[origin_id])
-
-    author_id = mapped_column(ForeignKey(User.id, ondelete="CASCADE"))
-    author: Mapped[User] = relationship(foreign_keys=[author_id])
 
     status: Mapped[str] = mapped_column(index=True)
 
@@ -93,6 +90,8 @@ class CompositionVariant(Base):
 
 @event.listens_for(CompositionVariant, "before_insert")
 def _new_variant(_: type[CompositionVariant], connection: Connection, variant: CompositionVariant):
+    update_within_flush_event(variant.team, connection, variants=variant.team.variants + 1)
+    update_within_flush_event(variant.member, connection, variants=variant.member.variants + 1)
     update_within_flush_event(variant.origin, connection, variants=variant.origin.variants + 1)
 
 
@@ -100,4 +99,6 @@ def _new_variant(_: type[CompositionVariant], connection: Connection, variant: C
 def _remove_variant(
     _: type[CompositionVariant], connection: Connection, variant: CompositionVariant
 ):
+    update_within_flush_event(variant.team, connection, variants=variant.team.variants - 1)
+    update_within_flush_event(variant.member, connection, variants=variant.member.variants - 1)
     update_within_flush_event(variant.origin, connection, variants=variant.origin.variants - 1)

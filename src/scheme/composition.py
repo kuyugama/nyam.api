@@ -1,10 +1,11 @@
 from pydantic import Field
 
-from .user import User
+from .team import Team
 from .genre import Genre
-from .model import Object, datetime_pd
 from src import constants
 from .image import UploadImage
+from .model import Object, datetime_pd
+from .team_member import TeamMemberWithoutTeam
 
 
 class Composition(Object):
@@ -61,12 +62,15 @@ class Composition(Object):
 
 
 class CompositionVariant(Object):
-    origin: Composition = Field(description="Original composition")
+    origin: Composition = Field(description="Оригінальний твір")
 
-    author: User = Field(description="Compositon variant author")
+    team: Team = Field(description="Команда, що створила цей варіант твору")
+    member: TeamMemberWithoutTeam = Field(
+        description="Учасник команди, що створив цей варіант твору"
+    )
 
     status: str = Field(
-        description="Composition variant status",
+        description="Статус варіанту твору",
         examples=[
             constants.STATUS_COMPOSITION_VARIANT_PENDING,
             constants.STATUS_COMPOSITION_VARIANT_ABANDONED,
@@ -74,9 +78,9 @@ class CompositionVariant(Object):
         ],
     )
 
-    title: str = Field(description="Composition variant title")
-    synopsis: str = Field(description="Composition variant synopsis")
+    title: str = Field(description="Назва варіанту твору (може відрізнятись від оригінальної)")
+    synopsis: str = Field(description="Опис варіанту твору (може відрізнятись від оригінального)")
 
     # Cached fields
-    chapters: int = Field(description="Composition variant chapters")
-    volumes: int = Field(description="Composition variant volumes")
+    chapters: int = Field(description="Кількість розділів варіанту твору")
+    volumes: int = Field(description="Кількість томів варіанту твору")

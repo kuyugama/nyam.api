@@ -4,24 +4,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import service
 from src import scheme
-from src.permissions import permissions
-from src.models import Composition, Token
 from src.database import acquire_session
 from ..dependencies import require_provider
+from src.models import Composition, TeamMember
 from .scheme import CreateCompositionVariantBody, CompositionListBody
 from src.util import paginated_response, get_offset_and_limit, UseCache
 from src.content_providers import SearchEntry, BaseContentProvider, ContentProviderComposition
 
 from .dependencies import (
     require_composition,
+    validate_create_variant,
     require_provider_composition,
+    require_team_member,
 )
 from src.dependencies import (
     require_page,
-    require_token,
     require_use_cache,
     require_drop_cache,
-    require_permissions,
 )
 
 router = APIRouter(prefix="/composition")
@@ -90,12 +89,11 @@ async def list_compositions(
     summary="Опублікувати варіант твору",
     response_model=scheme.CompositionVariant,
     operation_id="create_composition_variant",
-    dependencies=[require_permissions(permissions.content_variant.create)],
 )
 async def publish_composition_variant(
-    body: CreateCompositionVariantBody,
-    author_token: Token = Depends(require_token),
+    body: CreateCompositionVariantBody = Depends(validate_create_variant),
+    team_member: TeamMember = Depends(require_team_member),
     origin: Composition = Depends(require_composition),
     session: AsyncSession = Depends(acquire_session),
 ):
-    return await service.publish_composition_variant(session, origin, body, author_token.owner)
+    return await service.publish_composition_variant(session, origin, body, team_member)

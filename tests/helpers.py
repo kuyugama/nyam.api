@@ -26,6 +26,8 @@ from src.models import (
     UploadImage,
     Composition,
     CompositionVariant,
+    Team,
+    TeamMember,
 )
 
 
@@ -44,6 +46,7 @@ async def create_role(
     default: bool = False,
     title: str = "Title",
     permissions_: dict[str, bool] = None,
+    team_member_role: bool = False,
 ) -> Role:
     if permissions_ is None:
         permissions_ = {
@@ -56,6 +59,7 @@ async def create_role(
         weight=weight,
         default=default,
         permissions=permissions_to_json(permissions_),
+        team_member_role=team_member_role,
     )
     session.add(role)
 
@@ -103,6 +107,34 @@ async def create_token(
     await session.commit()
 
     return token
+
+
+async def create_team(session: AsyncSession, name: str = "team", description: str = "team") -> Team:
+    team = Team(
+        name=name,
+        description=description,
+    )
+
+    session.add(team)
+    await session.commit()
+
+    return team
+
+
+async def create_team_member(
+    session: AsyncSession, member: User, team: Team, role: Role, pseudonym: str = "Team member"
+) -> TeamMember:
+    team_member = TeamMember(
+        pseudonym=pseudonym,
+        user=member,
+        team=team,
+        role=role,
+    )
+
+    session.add(team_member)
+    await session.commit()
+
+    return team_member
 
 
 async def create_composition(
@@ -163,7 +195,8 @@ async def create_composition(
 async def create_composition_variant(
     session: AsyncSession,
     origin: Composition,
-    author: User,
+    team: Team,
+    team_member: TeamMember,
     title: str = None,
     synopsis: str | None = None,
 ) -> CompositionVariant:
@@ -172,7 +205,8 @@ async def create_composition_variant(
         title_local=title,
         synopsis_local=synopsis,
         status=constants.STATUS_COMPOSITION_VARIANT_PENDING,
-        author=author,
+        team=team,
+        member=team_member,
     )
 
     session.add(variant)
@@ -195,10 +229,16 @@ async def create_genre(
 
 
 async def create_volume(
-    session: AsyncSession, composition_variant: CompositionVariant, index: int, title: str = None
+    session: AsyncSession,
+    team_member: TeamMember,
+    composition_variant: CompositionVariant,
+    index: int,
+    title: str = None,
 ) -> Volume:
     volume = Volume(
         variant=composition_variant,
+        team=team_member.team,
+        member=team_member,
         title=title,
         index=index,
     )
@@ -211,10 +251,12 @@ async def create_volume(
 
 
 async def create_chapter(
-    session: AsyncSession, volume: Volume, index: int, title: str = None
+    session: AsyncSession, team_member: TeamMember, volume: Volume, index: int, title: str = None
 ) -> Chapter:
     chapter = Chapter(
         volume=volume,
+        team=team_member.team,
+        member=team_member,
         title=title,
         index=index,
     )
@@ -227,10 +269,12 @@ async def create_chapter(
 
 
 async def create_text_page(
-    session: AsyncSession, chapter: Chapter, index: int, text: str
+    session: AsyncSession, team_member: TeamMember, chapter: Chapter, index: int, text: str
 ) -> TextPage:
     page = TextPage(
         chapter=chapter,
+        team=team_member.team,
+        member=team_member,
         index=index,
         text=text,
     )
@@ -243,9 +287,11 @@ async def create_text_page(
 
 
 async def create_image_page(
-    session: AsyncSession, chapter: Chapter, index: int, image: UploadImage
+    session: AsyncSession, team_member: TeamMember, chapter: Chapter, index: int, image: UploadImage
 ) -> ImagePage:
-    page = ImagePage(chapter=chapter, index=index, image=image)
+    page = ImagePage(
+        chapter=chapter, team=team_member.team, member=team_member, index=index, image=image
+    )
 
     session.add(page)
 

@@ -3,11 +3,12 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from ..base import Base
 from .volume import Volume
+from ..mixins import OwnedByTeamMixin
 from .composition import CompositionVariant
 from src.util import update_within_flush_event, update_by_pk
 
 
-class Chapter(Base):
+class Chapter(Base, OwnedByTeamMixin):
     volume_id = mapped_column(ForeignKey(Volume.id, ondelete="CASCADE"))
     volume: Mapped[Volume] = relationship(foreign_keys=[volume_id])
 
