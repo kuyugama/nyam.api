@@ -14,7 +14,6 @@ async def test_normal(client, role_unverified):
         role,
         title=role_unverified.title,
         permissions=role_unverified.permissions,
-        default=role_unverified.default,
         name=role_unverified.name,
         id=role_unverified.id,
     )

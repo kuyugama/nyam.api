@@ -4,6 +4,6 @@ from src.scheme.model import SchemeModel
 
 
 class Role(SchemeModel):
-    name: str = Field(examples=["user"], description="Name of the role")
-    title: str = Field(description="Title of the role")
-    weight: int = Field(description="Weight of the role")
+    name: str = Field(examples=["user"], description="Назва ролі")
+    title: str = Field(description="Опис ролі")
+    weight: int = Field(description="Вага ролі")

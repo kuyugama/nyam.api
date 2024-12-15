@@ -5,7 +5,6 @@ from tests.helpers import assert_contain
 async def test_normal(client, master_key):
     role_name = "name"
     role_title = "title"
-    default = True
     permissions_ = {}
     expected_permissions = permissions_
     base_role = None
@@ -15,7 +14,6 @@ async def test_normal(client, master_key):
         master_key,
         role_name,
         role_title,
-        default,
         permissions_,
         base_role,
         weight,
@@ -26,7 +24,6 @@ async def test_normal(client, master_key):
     assert_contain(
         response.json(),
         name=role_name,
-        default=default,
         title=role_title,
         permissions=expected_permissions,
         weight=weight,
@@ -36,7 +33,6 @@ async def test_normal(client, master_key):
 async def test_use_base(client, master_key, role_user):
     role_name = "name"
     role_title = "title"
-    default = True
     permissions_ = {}
     expected_permissions = role_user.permissions
     base_role = role_user.name
@@ -45,7 +41,6 @@ async def test_use_base(client, master_key, role_user):
         master_key,
         role_name,
         role_title,
-        default,
         permissions_,
         base_role,
     )
@@ -55,7 +50,6 @@ async def test_use_base(client, master_key, role_user):
     assert_contain(
         response.json(),
         name=role_name,
-        default=default,
         title=role_title,
         permissions=expected_permissions,
     )
@@ -64,14 +58,12 @@ async def test_use_base(client, master_key, role_user):
 async def test_no_master(client, master_key):
     role_name = "name"
     role_title = "title"
-    default = True
     permissions_ = {}
     response = await requests.roles.create_role(
         client,
         "invalid-" + master_key,
         role_name,
         role_title,
-        default,
         permissions_,
         None,
     )

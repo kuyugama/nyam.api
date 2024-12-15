@@ -83,9 +83,9 @@ async def validate_role_delete(
         raise role_not_exist
 
     # Fallback to default role if replacement not set
-    if replacement is None and not role.default:
+    if replacement is None:
         fallback_role = await get_default_role(session)
-        if fallback_role is not None:
+        if fallback_role is not None and fallback_role.name != name:
             return role, fallback_role
 
     if replacement is not None:

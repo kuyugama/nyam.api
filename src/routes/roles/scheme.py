@@ -54,7 +54,6 @@ class UpdateRoleBody(SchemeModel):
 
 
 class FullRole(scheme.Role, scheme.Object):
-    default: bool
     permissions: dict[str, bool] = Field(
         examples=permissions_examples,
         description="Role's permissions",
