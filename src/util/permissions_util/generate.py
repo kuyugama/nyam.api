@@ -121,14 +121,13 @@ def generate_pyi_file(permissions: dict[str, Any], output_file: str):
         def sub(self, permission: str | tuple[str, ...]) -> "Permission": ...
         def __getitem__(self, item: str) -> "Permission": ...\n\n"""
 
-    content = ""
+    content = "\n".join(line.removeprefix("    ") for line in header.splitlines())
 
-    for name, permissions in permissions.items():
-        main_class = generate_pyi(f"root_{name}", permissions)
+    for name, permissions_ in permissions.items():
+        main_class = generate_pyi(f"root_{name}", permissions_)
         content += (
             "".join(
                 [
-                    "\n".join(line.removeprefix("    ") for line in header.splitlines()),
                     "\n\n",
                     main_class[:-1],
                     "\n\n",
@@ -137,5 +136,11 @@ def generate_pyi_file(permissions: dict[str, Any], output_file: str):
             )
             + "\n\n"
         )
+
+    for name in permissions:
+        if name.endswith("s"):
+            name = name[:-1]
+
+        content += f"{name}_registry: list[str]\n"
 
     Path(output_file).write_text(content)

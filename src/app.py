@@ -13,8 +13,9 @@ from ratelimit.ranking.redis import RedisRanking
 import config
 from src import scheme
 from src.database import session_holder
+from src.roles import create_default_roles
 from src.routes import router as main_router
-from src.permissions import permission_registry
+from src.permissions import permission_registry, team_permission_registry
 from src.ratelimit import RatelimitUser, authentication_func, memory_ranking, memory_store
 
 from src.util import (
@@ -57,6 +58,9 @@ def lifespan(test_mode: bool = True) -> Callable[[FastAPI], AsyncContextManager[
             redis = Redis.from_url(url=config.settings.redis.url)
             ranking = RedisRanking(redis, RatelimitUser)
             store = RedisStore(redis)
+
+            async with session_holder.session() as session:
+                await create_default_roles(session)
 
             setup_route_errors(app)
             render_route_permissions(app)
@@ -127,3 +131,8 @@ async def _errors() -> dict[str, dict[str, tuple[int, str]]]:
 @home_router.get("/permissions")
 async def _permissions() -> list[str]:
     return permission_registry
+
+
+@home_router.get("/permissions/team")
+async def _team_permissions() -> list[str]:
+    return team_permission_registry

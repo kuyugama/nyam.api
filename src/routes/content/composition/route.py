@@ -8,7 +8,7 @@ from src.database import acquire_session
 from ..dependencies import require_provider
 from src.models import Composition, TeamMember
 from .scheme import CreateCompositionVariantBody, CompositionListBody
-from src.util import paginated_response, get_offset_and_limit, UseCache
+from src.util import paginated_response, get_offset_and_limit, Cache
 from src.content_providers import SearchEntry, BaseContentProvider, ContentProviderComposition
 
 from .dependencies import (
@@ -19,7 +19,7 @@ from .dependencies import (
 )
 from src.dependencies import (
     require_page,
-    require_use_cache,
+    require_cache,
     require_drop_cache,
 )
 
@@ -73,7 +73,7 @@ async def get_composition(composition: Composition = Depends(require_composition
 async def list_compositions(
     body: CompositionListBody,
     session: AsyncSession = Depends(acquire_session),
-    use_cache: UseCache = require_use_cache("composition"),
+    use_cache: Cache = require_cache("composition"),
     page: int = Depends(require_page),
 ):
     offset, limit = get_offset_and_limit(page)

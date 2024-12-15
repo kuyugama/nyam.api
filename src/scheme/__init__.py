@@ -18,12 +18,14 @@ from .model import SchemeModel
 from .image import UploadImage
 from .error import define_error
 from .pagination import Paginated
+from .team_member import TeamMember
 from .providers import OAuthProvider
 from .composition import Composition
 from .providers import ContentProvider
 from .error import ValidationErrorModel
 from .error import define_error_category
 from .composition import CompositionVariant
+from .team_member import TeamMemberWithoutTeam
 
 
 __all__ = [
@@ -41,6 +43,7 @@ __all__ = [
     "ImagePage",
     "FullToken",
     "Paginated",
+    "TeamMember",
     "ClientInfo",
     "ErrorModel",
     "SchemeModel",
@@ -51,6 +54,7 @@ __all__ = [
     "ContentProvider",
     "CompositionVariant",
     "ValidationErrorModel",
+    "TeamMemberWithoutTeam",
     "define_error_category",
 ]
 

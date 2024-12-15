@@ -36,9 +36,9 @@ from .sqlalchemy_util import update_within_flush_event
 
 __all__ = [
     "now",
+    "Cache",
     "lower",
     "slugify",
-    "UseCache",
     "file_size",
     "has_errors",
     "delete_obj",
@@ -92,9 +92,17 @@ def paginated_response(
 T = typing.TypeVar("T")
 
 
-class UseCache(typing.Protocol):
+class Cache(typing.Protocol):
     @staticmethod
-    async def __call__(cache_key: tuple[typing.Any, ...], coro: typing.Awaitable[T]) -> T: ...
+    async def __call__(
+        cache_key: tuple[typing.Any, ...],
+        coro: (
+            typing.Awaitable[T]
+            | typing.Callable[..., typing.Awaitable[T] | typing.Coroutine[..., ..., T]]
+        ),
+        *args,
+        **kwargs
+    ) -> T: ...
 
 
 class PermissionChecker(typing.Protocol):

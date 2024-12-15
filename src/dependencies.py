@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from functools import lru_cache
 
@@ -6,10 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Header, Query, Depends, BackgroundTasks, params, Request, UploadFile, FastAPI
 
 from config import settings
-from . import service, scheme, util
+from . import service, scheme, util, errors
 from .util import cache_key_hash, requires_permissions
 from src.database import session_holder, acquire_session
-from .models import Token, CompositionVariant, Volume, Chapter
+from .models import Token, CompositionVariant, Volume, Chapter, User
 
 define_error = scheme.define_error_category("token")
 token_required = define_error("required", "Token required", 401)
@@ -239,12 +240,12 @@ def file_mime(file: UploadFile) -> str:
 
 
 @lru_cache
-def require_use_cache(key: str):
+def require_cache(key: str):
     """
     Dependency generates function to save result of coroutines using cache key
 
     :param key: cache context key (can be used to drop cache)
-    :return: (tuple<Any, ...>, Awaitable<T>) -> Awaitable<T>
+    :return: (tuple<Any, ...>, Awaitable<T> | Callable, *args, **kwargs) -> Awaitable<T>
     """
 
     def dependency(request: Request):
@@ -258,12 +259,15 @@ def require_use_cache(key: str):
 
         cache = app.user_cache.setdefault(key, {})
 
-        async def use_cache(cache_key, coro):
+        async def use_cache(cache_key, coro, *args, **kwargs):
             nonlocal cache
             key = cache_key_hash(cache_key)
 
             if key in cache:
                 return cache[key]
+
+            if not inspect.iscoroutine(coro):
+                coro = coro(*args, **kwargs)
 
             return cache.setdefault(key, await coro)
 
@@ -294,3 +298,12 @@ def require_drop_cache(key: str):
             cache.clear()
 
     return Depends(dependency)
+
+
+@errors.user_not_found.mark
+async def require_user(nickname: str, session: AsyncSession = Depends(acquire_session)) -> User:
+    user = await service.get_user_by_nickname(session, nickname)
+    if user is None:
+        raise errors.user_not_found
+
+    return user

@@ -30,9 +30,13 @@ page.image.update
 team_member_permission_schema = """
 team.update
 team.disband
+join.list
+join.accept
+join.reject
 member.manage-roles
-member.accept
-
+member.manage-permissions
+member.manage-pseudonym
+member.kick
 """
 team_member_permission_schema += content_variant_permission_schema
 
@@ -66,6 +70,7 @@ content.ranobe.publish
 content.ranobe.update
 override-author
 team.create
+team.verify
 """
 
 
@@ -74,4 +79,4 @@ team_permissions = Permission(schema=parse_schema(team_member_permission_schema)
 
 
 permission_registry = generate_permissions(permissions.schema).splitlines()
-team_permissions_registry = generate_permissions(team_permissions.schema).splitlines()
+team_permission_registry = generate_permissions(team_permissions.schema).splitlines()

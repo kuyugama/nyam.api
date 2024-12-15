@@ -59,7 +59,15 @@ async def drop_expired_tokens(session: AsyncSession, shift: timedelta = timedelt
 
 
 async def get_default_role(session: AsyncSession) -> Role | None:
-    return await session.scalar(select(Role).filter(Role.default))
+    return await session.scalar(
+        select(Role).filter_by(team_member_role=False).order_by(Role.weight.asc()).limit(1)
+    )
+
+
+async def get_team_default_role(session: AsyncSession) -> Role | None:
+    return await session.scalar(
+        select(Role).filter_by(team_member_role=True).order_by(Role.weight.asc()).limit(1)
+    )
 
 
 async def get_role_by_name(session: AsyncSession, name: str) -> Role | None:
