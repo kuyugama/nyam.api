@@ -224,6 +224,7 @@ async def reject_team_join_request(
 
 # endregion
 
+
 # region Team Members management
 
 
@@ -259,5 +260,42 @@ async def update_team_member(
 ):
     return await service.update_team_member(session, member, body)
 
+
+# endregion
+
+
+# region Team management by privileged users
+
+@router.post(
+    "/{team_id}/verify",
+    summary="Верифікувати команду",
+    response_model=scheme.Team,
+    operation_id="verify_team",
+    dependencies=[
+        require_permissions(permissions.team.verify),
+    ]
+)
+async def verify_team(
+        team: Team = Depends(require_team),
+    token: Token = Depends(require_token),
+        session: AsyncSession = Depends(acquire_session),
+):
+    return await service.verify_team(session, team, token.owner)
+
+
+@router.delete(
+    "/{team_id}/verify",
+    summary="Зняти верифікацію з команди",
+    response_model=scheme.Team,
+    operation_id="unverify_team",
+    dependencies=[
+        require_permissions(permissions.team.verify),
+    ]
+)
+async def unverify_team(
+        team: Team = Depends(require_team),
+        session: AsyncSession = Depends(acquire_session),
+):
+    return await service.unverify_team(session, team)
 
 # endregion

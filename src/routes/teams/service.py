@@ -219,12 +219,33 @@ async def update_team_member(session: AsyncSession, member: TeamMember, body: Up
         else:
             member.local_permissions = body.permissions
 
-
     if body.pseudonym is not None:
         member.pseudonym = body.pseudonym
 
     await session.commit()
 
     return member
+
+
+# endregion
+
+# region Team management by privileged users
+
+async def verify_team(session: AsyncSession, team: Team, verifier: User) -> Team:
+    team.verified = True
+    team.verifier = verifier
+
+    await session.commit()
+
+    return team
+
+async def unverify_team(session: AsyncSession, team: Team):
+    team.verified = False
+    team.verifier_id = None
+    team.verifier = None
+
+    await session.commit()
+
+    return team
 
 # endregion

@@ -12,6 +12,9 @@ class Team(Base):
     description: orm.Mapped[str] = orm.mapped_column(index=True)
     verified: orm.Mapped[bool] = orm.mapped_column(index=True, default=False)
 
+    verifier_id = orm.mapped_column(ForeignKey(User.id, ondelete="CASCADE"), index=True)
+    verifier: orm.Mapped[User] = orm.relationship(foreign_keys=[verifier_id])
+
     # Cached fields
     members: orm.Mapped[int] = orm.mapped_column(default=0, index=True)
     variants: orm.Mapped[int] = orm.mapped_column(default=0, index=True)
