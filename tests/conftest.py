@@ -7,6 +7,8 @@ from PIL import Image
 
 import config
 import asyncio
+
+from src import constants
 from tests import helpers
 from src.app import make_app
 from datetime import timedelta
@@ -153,7 +155,7 @@ def master_key() -> str:
 async def role_unverified(session):
     return await helpers.create_role(
         session,
-        "unverified",
+        constants.ROLE_UNVERIFIED,
         0,
         default=True,
         title="Unverified user",
@@ -165,7 +167,7 @@ async def role_unverified(session):
 async def role_user(session):
     return await helpers.create_role(
         session,
-        "user",
+        constants.ROLE_USER,
         10,
         default=False,
         title="Regular user",
@@ -192,7 +194,7 @@ async def role_translator(session):
 async def role_moderator(session):
     return await helpers.create_role(
         session,
-        "moderator",
+        constants.ROLE_MODERATOR,
         20,
         default=False,
         title="Moderator",
@@ -207,7 +209,7 @@ async def role_moderator(session):
 async def role_admin(session):
     return await helpers.create_role(
         session,
-        "admin",
+        constants.ROLE_ADMINISTRATOR,
         30,
         default=False,
         title="Administrator",
@@ -227,7 +229,7 @@ async def role_team_member(session) -> Role:
     # noinspection PyTestUnpassedFixture
     return await helpers.create_role(
         session,
-        "TeamMember",
+        constants.ROLE_TEAM_MEMBER,
         0,
         title="Team Member",
         team_member_role=True,
@@ -245,7 +247,7 @@ async def role_team_owner(session) -> Role:
     # noinspection PyTestUnpassedFixture
     return await helpers.create_role(
         session,
-        "TeamOwner",
+        constants.ROLE_TEAM_OWNER,
         10,
         title="Team Owner",
         team_member_role=True,
@@ -256,8 +258,11 @@ async def role_team_owner(session) -> Role:
             team_permissions.page.__.create: True,
             team_permissions.team.update: True,
             team_permissions.team.disband: True,
-            team_permissions.member.accept: True,
+            team_permissions.join.list: True,
+            team_permissions.join.accept: True,
+            team_permissions.join.reject: True,
             team_permissions.member.manage_roles: True,
+            team_permissions.member.kick: True,
         },
     )
 

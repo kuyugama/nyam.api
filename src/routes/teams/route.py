@@ -3,18 +3,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import scheme, models
 from src.routes.teams import service
-from src.models import Token, Team, User, TeamMember
 from src.database import acquire_session
+from src.models import Token, Team, User, TeamMember
 from src.permissions import permissions, team_permissions
-from .scheme import CreateTeamBody, UpdateTeamBody, TeamJoinRequest, UpdateTeamMemberBody
 from src.util import Cache, get_offset_and_limit, paginated_response
+from .scheme import CreateTeamBody, UpdateTeamBody, TeamJoinRequest, UpdateTeamMemberBody
+
 from .dependencies import (
-    require_team_permissions,
-    require_team,
-    validate_update,
-    require_team_join,
     require_provided_team_member,
+    require_team_permissions,
+    require_no_join_request,
     validate_update_member,
+    require_team_member,
+    require_team_join,
+    validate_update,
+    require_team,
 )
 
 from src.dependencies import (
@@ -47,6 +50,26 @@ async def get_teams(
 
     total = await cache((), service.count_teams, session)
     items = await service.list_teams(session, offset=offset, limit=limit)
+
+    return paginated_response(items.all(), total, page, limit)
+
+
+@router.get(
+    "/my",
+    summary="Отримати ваші команди",
+    response_model=scheme.Paginated[scheme.Team],
+    operation_id="list_my_teams",
+)
+async def get_my_teams(
+    cache: Cache = require_cache("teams"),
+    page: int = Depends(require_page),
+    token: Token = Depends(require_token),
+    session: AsyncSession = Depends(acquire_session),
+):
+    offset, limit = get_offset_and_limit(page)
+
+    total = await cache(("my",), service.count_teams, session, member=token.owner)
+    items = await service.list_teams(session, offset=offset, limit=limit, member=token.owner)
 
     return paginated_response(items.all(), total, page, limit)
 
@@ -109,26 +132,6 @@ async def get_user_teams(
 # region Create, update, inspect owned teams
 
 
-@router.get(
-    "/my",
-    summary="Отримати ваші команди",
-    response_model=scheme.Paginated[scheme.Team],
-    operation_id="list_my_teams",
-)
-async def get_my_teams(
-    cache: Cache = require_cache("teams"),
-    page: int = Depends(require_page),
-    token: Token = Depends(require_token),
-    session: AsyncSession = Depends(acquire_session),
-):
-    offset, limit = get_offset_and_limit(page)
-
-    total = await cache(("my",), service.count_teams, session, member=token.owner)
-    items = await service.list_teams(session, offset=offset, limit=limit, member=token.owner)
-
-    return paginated_response(items.all(), total, page, limit)
-
-
 @router.post(
     "/",
     summary="Створити команду",
@@ -164,6 +167,21 @@ async def update_team(
 
 
 # region Team Joins
+
+
+@router.post(
+    "/{team_id}/joins",
+    summary="Створити запит на приєднання в команду",
+    response_model=TeamJoinRequest,
+    operation_id="join_team",
+    dependencies=[Depends(require_no_join_request)],
+)
+async def join_team(
+    team: Team = Depends(require_team),
+    token: Token = Depends(require_token),
+    session: AsyncSession = Depends(acquire_session),
+):
+    return await service.create_join(session, team, token.owner)
 
 
 @router.get(
@@ -229,7 +247,7 @@ async def reject_team_join_request(
 
 
 @router.delete(
-    "/{team_id}/members/{username}",
+    "/{team_id}/members/{nickname}",
     summary="Вигнати учасника команди",
     response_model=scheme.User,
     operation_id="kick_team_member",
@@ -245,7 +263,7 @@ async def kick_team_member(
 
 
 @router.patch(
-    "/{team_id}/members/{username}",
+    "/{team_id}/members/{nickname}",
     summary="Редагувати учасника команди: встановити псевдонім, роль, права",
     response_model=scheme.TeamMember,
     operation_id="update_team_member",
@@ -261,10 +279,24 @@ async def update_team_member(
     return await service.update_team_member(session, member, body)
 
 
+@router.post(
+    "/{team_id}/leave",
+    summary="Покинути команду",
+    response_model=scheme.TeamMember,
+    operation_id="leave_team",
+)
+async def leave_team(
+    member: TeamMember = Depends(require_team_member),
+    session: AsyncSession = Depends(acquire_session),
+):
+    return await service.kick_team_member(session, member)
+
+
 # endregion
 
 
 # region Team management by privileged users
+
 
 @router.post(
     "/{team_id}/verify",
@@ -273,12 +305,12 @@ async def update_team_member(
     operation_id="verify_team",
     dependencies=[
         require_permissions(permissions.team.verify),
-    ]
+    ],
 )
 async def verify_team(
-        team: Team = Depends(require_team),
+    team: Team = Depends(require_team),
     token: Token = Depends(require_token),
-        session: AsyncSession = Depends(acquire_session),
+    session: AsyncSession = Depends(acquire_session),
 ):
     return await service.verify_team(session, team, token.owner)
 
@@ -290,12 +322,13 @@ async def verify_team(
     operation_id="unverify_team",
     dependencies=[
         require_permissions(permissions.team.verify),
-    ]
+    ],
 )
 async def unverify_team(
-        team: Team = Depends(require_team),
-        session: AsyncSession = Depends(acquire_session),
+    team: Team = Depends(require_team),
+    session: AsyncSession = Depends(acquire_session),
 ):
     return await service.unverify_team(session, team)
+
 
 # endregion

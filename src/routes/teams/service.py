@@ -1,6 +1,6 @@
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, ScalarResult, Select
+from sqlalchemy import select, func, ScalarResult, Select, case
 
 from src import constants
 from src.util import merge_permissions
@@ -91,7 +91,8 @@ def members_options(query: Select) -> Select:
             TeamMember.team,
         ),
         joinedload(TeamMember.user).options(
-            joinedload(User.avatar, User.role),
+            joinedload(User.avatar),
+            joinedload(User.role),
         ),
         joinedload(TeamMember.role),
     )
@@ -129,10 +130,32 @@ def joins_options(query: Select) -> Select:
 
 async def get_join(session: AsyncSession, team: Team, join_id: int) -> TeamJoinRequest:
     return await session.scalar(
-        select(TeamJoinRequest).filter(
-            TeamJoinRequest.team_id == team.id, TeamJoinRequest.id == join_id  # type: ignore
+        joins_options(
+            select(TeamJoinRequest).filter(
+                TeamJoinRequest.team_id == team.id, TeamJoinRequest.id == join_id  # type: ignore
+            )
         )
     )
+
+
+async def get_join_by_user(session: AsyncSession, team: Team, user: User) -> TeamJoinRequest:
+    return await session.scalar(
+        joins_options(
+            select(TeamJoinRequest).filter(
+                TeamJoinRequest.team_id == team.id,
+                TeamJoinRequest.user_id == user.id,
+            )
+        )
+    )
+
+
+async def create_join(session: AsyncSession, team: Team, user: User) -> TeamJoinRequest:
+    join = TeamJoinRequest(team=team, user=user, status=constants.STATUS_TEAM_JOIN_PENDING)
+
+    session.add(join)
+    await session.commit()
+
+    return join
 
 
 def filter_joins(query: Select, team: Team) -> Select:
@@ -151,7 +174,16 @@ async def list_joins(
     return await session.scalars(
         filter_joins(
             joins_options(
-                select(TeamJoinRequest).offset(offset).limit(limit),
+                select(TeamJoinRequest)
+                .offset(offset)
+                .limit(limit)
+                .order_by(
+                    case(
+                        (TeamJoinRequest.status == constants.STATUS_TEAM_JOIN_PENDING, 1), else_=0
+                    ).desc(),
+                    TeamJoinRequest.updated_at.desc(),
+                    TeamJoinRequest.created_at.desc(),
+                ),
             ),
             team,
         )
@@ -189,14 +221,16 @@ async def reject_join(session: AsyncSession, join: TeamJoinRequest):
 
 
 # region Team members management
-async def get_team_member_by_username(
+async def get_team_member_by_nickname(
     session: AsyncSession, team: Team, nickname: str
 ) -> TeamMember:
     return await session.scalar(
-        select(TeamMember).filter(
-            TeamMember.team_id == team.id,
-            TeamMember.user_id == User.id,
-            User.nickname == nickname,
+        members_options(
+            select(TeamMember).filter(
+                TeamMember.team_id == team.id,
+                TeamMember.user_id == User.id,
+                User.nickname == nickname,
+            )
         )
     )
 
@@ -231,6 +265,7 @@ async def update_team_member(session: AsyncSession, member: TeamMember, body: Up
 
 # region Team management by privileged users
 
+
 async def verify_team(session: AsyncSession, team: Team, verifier: User) -> Team:
     team.verified = True
     team.verifier = verifier
@@ -238,6 +273,7 @@ async def verify_team(session: AsyncSession, team: Team, verifier: User) -> Team
     await session.commit()
 
     return team
+
 
 async def unverify_team(session: AsyncSession, team: Team):
     team.verified = False
@@ -247,5 +283,6 @@ async def unverify_team(session: AsyncSession, team: Team):
     await session.commit()
 
     return team
+
 
 # endregion

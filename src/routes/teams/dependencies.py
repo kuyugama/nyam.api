@@ -21,6 +21,7 @@ from .errors import (
     role_invalid,
     not_member,
     not_found,
+    join_already_requested,
 )
 
 
@@ -128,7 +129,7 @@ async def require_provided_team_member(
     team: Team = Depends(require_team),
     session: AsyncSession = Depends(acquire_session),
 ):
-    member = await service.get_team_member_by_username(session, team, nickname)
+    member = await service.get_team_member_by_nickname(session, team, nickname)
 
     if member is None:
         raise provided_not_member
@@ -151,3 +152,14 @@ async def validate_update_member(
             raise role_invalid
 
     return body
+
+
+@join_already_requested.mark
+async def require_no_join_request(
+    team: Team = Depends(require_team),
+    token: Token = Depends(require_token),
+    session: AsyncSession = Depends(acquire_session),
+):
+    join = await service.get_join_by_user(session, team, token.owner)
+    if join is not None:
+        raise join_already_requested

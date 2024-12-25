@@ -20,3 +20,5 @@ provided_not_member = _define_error(
 )
 role_not_found = _define_error("role-not-found", "Role not found", 404)
 role_invalid = _define_error("role-invalid", "Role of invalid type specified", 400)
+
+join_already_requested = _define_error("join-already-requested", "Join already requested", 404)

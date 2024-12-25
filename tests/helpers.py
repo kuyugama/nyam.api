@@ -316,16 +316,45 @@ async def create_upload_image(session: AsyncSession) -> UploadImage:
     return image
 
 
-def assert_contain(source: dict[str, Any], **kw):
+def assert_contain(
+    source: dict[str, Any],
+    recursive: bool = False,
+    __frame=None,
+    __rel_path=None,
+    __name: str = "",
+    **kw,
+):
+    frame = inspect.stack()[1]
+    file_path = Path(frame.filename)
+    rel_path = file_path.relative_to(sys.path[0])
+
+    if recursive:
+        frame = __frame or frame
+        rel_path = __rel_path or rel_path
+
     for name, value in kw.items():
+        if __name:
+            name_ = __name + " -> " + name
+        else:
+            name_ = name
+
         actual_value = source.get(name)
+        if recursive and isinstance(actual_value, dict) and isinstance(value, dict):
+            assert_contain(
+                actual_value,
+                recursive=True,
+                __frame=frame,
+                __rel_path=rel_path,
+                __name=name_,
+                **value,
+            )
+            continue
+
         if actual_value != value:
-            frame = inspect.stack()[1]
-            file_path = Path(frame.filename)
-            rel_path = file_path.relative_to(sys.path[0])
+
             print(
                 f"{rel_path}:{frame.lineno} => {frame.function}",
-                f"  {name} -> {actual_value!r} != {value!r}",
+                f"  {name_} => {actual_value!r} != {value!r}",
                 sep="\n",
             )
         assert actual_value == value

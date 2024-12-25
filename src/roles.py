@@ -6,6 +6,8 @@ from src.models import Role
 from src.util import merge_permissions
 from src.permissions import permissions, team_permissions
 
+
+# region Roles definition
 DEFAULT_ROLES = {
     constants.ROLE_TEAM_OWNER: {
         "team_member_role": True,
@@ -57,6 +59,7 @@ DEFAULT_ROLES = {
         "permissions": {
             permissions.content.__.delete: True,
             permissions.user.update_info: True,
+            permissions.team.verify: True,
         },
     },
     constants.ROLE_PUBLISHER: {
@@ -86,9 +89,12 @@ DEFAULT_ROLES = {
     },
 }
 
+# endregion
+
 # Roles with propagated permissions from lower to higher weight
 SORTED_ROLES = {}
 
+# region Roles sorting
 _prev_role = None
 # Sort roles by weight and team_member_role parameter
 for _role_name in sorted(
@@ -111,6 +117,8 @@ for _role_name in sorted(
         "title": _role["title"],
         "permissions": _role["permissions"],
     }
+
+# endregion
 
 
 async def create_default_roles(session: AsyncSession):

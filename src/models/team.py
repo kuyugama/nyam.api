@@ -24,10 +24,10 @@ class Team(Base):
 
 class TeamJoinRequest(Base):
     __tablename__ = "service_team_join_requests"
-    team_id = orm.mapped_column(ForeignKey(Team.id))
+    team_id = orm.mapped_column(ForeignKey(Team.id, ondelete="CASCADE"))
     team: orm.Mapped[Team] = orm.relationship(foreign_keys=[team_id])
 
-    user_id = orm.mapped_column(ForeignKey(User.id))
+    user_id = orm.mapped_column(ForeignKey(User.id, ondelete="CASCADE"))
     user: orm.Mapped[User] = orm.relationship(foreign_keys=[user_id])
 
     status: orm.Mapped[str] = orm.mapped_column(
