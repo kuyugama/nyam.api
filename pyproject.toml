@@ -1,14 +1,15 @@
 [tool.poetry]
-name = "nyamga"
+name = "nyam"
 version = "0.1.0"
-description = ""
+description = "The Nyam API"
 authors = ["kuyugama <mail.kuyugama@gmail.com>"]
 readme = "README.md"
+license = "LICENSE.md"
 package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = "^0.115.0"
+fastapi = {extras=["standard"], version="0.115.6"}
 uvicorn = "^0.31.0"
 sqlalchemy = "^2.0.35"
 asyncpg = "^0.29.0"

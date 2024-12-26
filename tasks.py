@@ -13,7 +13,6 @@ from dramatiq.brokers.redis import RedisBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
-from src.scheme import APIError
 
 if "pytest" not in sys.modules:
     broker = RedisBroker(url=settings.redis.url)
@@ -125,6 +124,7 @@ async def periodiq_drop_expired_tokens(session: AsyncSession):
 async def refresh_thirdparty_token(session: AsyncSession, token_id: int) -> None:
     from src.oauth_providers import get_provider_instance, OAuthToken
     from src.models import ThirdpartyToken
+    from src.scheme import APIError
     from src.util import now
 
     now_ = now()
