@@ -1,0 +1,8 @@
+__pycache__
+env-example
+secrets-example.yaml
+generate_permissions_pyi.py
+.idea
+.git
+.github
+tests
