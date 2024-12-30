@@ -2,11 +2,11 @@ from fastapi import Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import service
+from src.models import Role
 from src import scheme, util
 from src.service import get_lowest_role
 from src.database import acquire_session
 from .scheme import CreateRoleBody, UpdateRoleBody
-from ...models import Role
 
 define_error = scheme.define_error_category("roles")
 name_occupied = define_error("name-occupied", "Role name occupied", 400)
@@ -26,7 +26,10 @@ replacement_role_not_exist = define_error(
 base_role_not_exist = define_error("base-role-not-exist", "Base role not exist", 404)
 
 
-@util.has_errors(name_occupied, default_role_already_exist, base_role_not_exist, weight_required)
+@name_occupied.mark()
+@weight_required.mark()
+@base_role_not_exist.mark()
+@default_role_already_exist.mark()
 async def validate_role_create(
     body: CreateRoleBody, session: AsyncSession = Depends(acquire_session)
 ) -> CreateRoleBody:
@@ -51,7 +54,7 @@ async def validate_role_create(
     return body
 
 
-@role_not_exist.mark
+@role_not_exist.mark()
 async def validate_role(name: str, session: AsyncSession = Depends(acquire_session)) -> Role:
     role = await service.get_role_by_name(session, name)
     if role is None:
@@ -60,7 +63,7 @@ async def validate_role(name: str, session: AsyncSession = Depends(acquire_sessi
     return role
 
 
-@default_role_already_exist.mark
+@default_role_already_exist.mark()
 async def validate_role_update(
     body: UpdateRoleBody,
     session: AsyncSession = Depends(acquire_session),

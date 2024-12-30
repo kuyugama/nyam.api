@@ -29,7 +29,7 @@ from .errors import (
 _TeamResolver = Callable[..., Team | int | None | Awaitable[Team | int | None]]
 
 
-@not_found.mark
+@not_found.mark()
 async def require_team(team_id: int, session: AsyncSession = Depends(acquire_session)):
     team = await get_team(session, team_id)
 
@@ -42,7 +42,7 @@ async def require_team(team_id: int, session: AsyncSession = Depends(acquire_ses
 @lru_cache()
 def optional_team_member(resolve_team: _TeamResolver = require_team):
 
-    @not_found.mark
+    @not_found.mark()
     async def dependency(
         team: int | Team | None = Depends(resolve_team),
         token: Token = Depends(require_token),
@@ -62,8 +62,8 @@ def optional_team_member(resolve_team: _TeamResolver = require_team):
 @lru_cache
 def require_team_member(resolve_team: _TeamResolver):
 
-    @not_found.mark
-    @not_member.mark
+    @not_found.mark()
+    @not_member.mark()
     async def dependency(
         member: TeamMember | None = Depends(optional_team_member(resolve_team)),
     ):
@@ -79,7 +79,7 @@ def require_team_member(resolve_team: _TeamResolver):
 def require_team_permissions(*permissions, resolve_team: _TeamResolver = require_team):
     denied = permission_denied(extra=dict(permissions=", ".join(map(str, permissions))))
 
-    @permission_denied.mark
+    @permission_denied.mark()
     async def dependency(
         team_member: TeamMember | None = Depends(optional_team_member(resolve_team)),
         master_granted: bool = Depends(master_grant),
@@ -94,7 +94,7 @@ def require_team_permissions(*permissions, resolve_team: _TeamResolver = require
     return Depends(dependency)
 
 
-@nothing_to_update.mark
+@nothing_to_update.mark()
 async def validate_update(
     body: UpdateTeamBody,
     team: Team = Depends(require_team),
@@ -111,7 +111,7 @@ async def validate_update(
     return body
 
 
-@join_not_found.mark
+@join_not_found.mark()
 async def require_team_join(
     join_id: int,
     team: Team = Depends(require_team),
@@ -125,7 +125,7 @@ async def require_team_join(
     return join
 
 
-@provided_not_member.mark
+@provided_not_member.mark()
 async def require_provided_team_member(
     nickname: str,
     team: Team = Depends(require_team),
@@ -139,8 +139,8 @@ async def require_provided_team_member(
     return member
 
 
-@role_invalid.mark
-@role_not_found.mark
+@role_invalid.mark()
+@role_not_found.mark()
 async def validate_update_member(
     body: UpdateTeamMemberBody,
     session: AsyncSession = Depends(acquire_session),
@@ -156,7 +156,7 @@ async def validate_update_member(
     return body
 
 
-@join_already_requested.mark
+@join_already_requested.mark()
 async def require_no_join_request(
     team: Team = Depends(require_team),
     token: Token = Depends(require_token),
@@ -167,7 +167,7 @@ async def require_no_join_request(
         raise join_already_requested
 
 
-@cannot_kick_highest_role.mark
+@cannot_kick_highest_role.mark()
 async def validate_kick_member(
     member: TeamMember = Depends(require_provided_team_member),
     requester_member: TeamMember = Depends(optional_team_member()),

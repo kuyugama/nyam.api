@@ -17,8 +17,8 @@ composition_already_exists = define_error("already-exists", "Composition already
 composition_not_found = define_error("not-found", "Composition not found", 404)
 
 
-@provider_composition_not_found.mark
-@composition_already_exists.mark
+@provider_composition_not_found.mark()
+@composition_already_exists.mark()
 async def require_provider_composition(
     provider_id: str,
     provider: BaseContentProvider = Depends(require_provider),
@@ -35,7 +35,7 @@ async def require_provider_composition(
     return provider_composition
 
 
-@composition_not_found.mark
+@composition_not_found.mark()
 async def require_composition(
     slug: str,
     session: AsyncSession = Depends(acquire_session),

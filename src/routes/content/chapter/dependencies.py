@@ -10,8 +10,8 @@ from src.service import get_next_index, update_next_indexes
 from src.models import Chapter, CompositionVariant, BasePage
 
 from src.dependencies import (
-    file_mime,
     require_chapter,
+    file_mime,
 )
 
 define_error = define_error_category("content/page")
@@ -31,7 +31,7 @@ def require_team_id(chapter: Chapter = Depends(require_chapter)):
     return chapter.team_id
 
 
-@type_invalid.mark
+@type_invalid.mark()
 async def validate_publish_text_page(
     body: PublishTextPageBody,
     chapter: Chapter = Depends(require_chapter),
@@ -68,9 +68,9 @@ async def validate_image_page_index(
     return index
 
 
-@image_too_big.mark
-@mime_invalid.mark
-@type_invalid.mark
+@image_too_big.mark()
+@mime_invalid.mark()
+@type_invalid.mark()
 async def validate_image_page_file(
     file: UploadFile = File(description="Зображення сторінки"),
     mime: str = Depends(file_mime),

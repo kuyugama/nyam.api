@@ -12,7 +12,7 @@ define_error = define_error_category("oauth")
 provider_not_found = define_error("provider-not-found", "OAuth provider not found", 404)
 
 
-@provider_not_found.mark
+@provider_not_found.mark()
 def require_oauth_provider(identifier: str) -> oauth_providers.BaseOAuthProvider:
     provider = oauth_providers.get_provider_instance(identifier)
 
@@ -36,7 +36,7 @@ async def require_oauth_user(
     return await oauth_provider.get_user(token)
 
 
-@default_role_not_exist.mark
+@default_role_not_exist.mark()
 async def require_default_role(session: AsyncSession = Depends(acquire_session)):
     role = await get_lowest_role(session)
     if role is None:

@@ -56,7 +56,7 @@ async def _use_token(token: str):
         await session.commit()
 
 
-@token_expired.mark
+@token_expired.mark()
 async def optional_token(
     background: BackgroundTasks,
     token_body: str | None = Header(
@@ -81,7 +81,7 @@ async def optional_token(
             background.add_task(_use_token, token_body)
 
 
-@token_required.mark
+@token_required.mark()
 async def require_token(
     token: Token | None = Depends(optional_token),
 ):
@@ -97,7 +97,7 @@ def master_grant(master_key: str | None = Header(None, description="Master key")
     return master_key == settings.service.master_key
 
 
-@master_required.mark
+@master_required.mark()
 def master_lock(master_granted: bool = Depends(master_grant)):
     """Prevent access to endpoint for users that doesn't provide master key"""
     if not master_granted:
@@ -141,7 +141,7 @@ def require_permissions(*permissions: str) -> params.Depends:
         require_permissions("user.own.update-info | user.update_info")
     """
 
-    @permission_denied.mark
+    @permission_denied.mark()
     @requires_permissions(permissions)
     def dependency(
         master_granted: bool = Depends(master_grant),
@@ -153,7 +153,7 @@ def require_permissions(*permissions: str) -> params.Depends:
     return Depends(dependency)
 
 
-@permission_denied.mark
+@permission_denied.mark()
 def interactive_require_permissions(
     master_granted: bool = Depends(master_grant), token: Token | None = Depends(optional_token)
 ):
@@ -193,7 +193,7 @@ def require_page(page: int = Query(1, ge=1, description="№ Сторінки"))
     return page
 
 
-@_variant_not_found.mark
+@_variant_not_found.mark()
 async def require_composition_variant(
     variant_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> CompositionVariant:
@@ -204,7 +204,7 @@ async def require_composition_variant(
     return variant
 
 
-@_volume_not_found.mark
+@_volume_not_found.mark()
 async def require_volume(
     volume_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> Volume:
@@ -215,7 +215,7 @@ async def require_volume(
     return volume
 
 
-@_chapter_not_found.mark
+@_chapter_not_found.mark()
 async def require_chapter(
     chapter_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> Chapter:
@@ -226,7 +226,7 @@ async def require_chapter(
     return chapter
 
 
-@_page_not_found.mark
+@_page_not_found.mark()
 async def require_content_page(page_id: int, session: AsyncSession = Depends(acquire_session)):
     page = await service.get_page(session, page_id)
     if page is None:
