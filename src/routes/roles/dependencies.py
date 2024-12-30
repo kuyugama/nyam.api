@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import service
 from src import scheme, util
-from src.service import get_default_role
+from src.service import get_lowest_role
 from src.database import acquire_session
 from .scheme import CreateRoleBody, UpdateRoleBody
 from ...models import Role
@@ -34,7 +34,7 @@ async def validate_role_create(
     if role is not None:
         raise name_occupied
 
-    if body.default and await get_default_role(session):
+    if body.default and await get_lowest_role(session):
         raise default_role_already_exist
 
     if body.base_role is not None:
@@ -65,7 +65,7 @@ async def validate_role_update(
     body: UpdateRoleBody,
     session: AsyncSession = Depends(acquire_session),
 ):
-    if body.default and await get_default_role(session):
+    if body.default and await get_lowest_role(session):
         raise default_role_already_exist
 
     return body
@@ -84,7 +84,7 @@ async def validate_role_delete(
 
     # Fallback to default role if replacement not set
     if replacement is None:
-        fallback_role = await get_default_role(session)
+        fallback_role = await get_lowest_role(session)
         if fallback_role is not None and fallback_role.name != name:
             return role, fallback_role
 

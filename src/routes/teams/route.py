@@ -18,6 +18,7 @@ from .dependencies import (
     require_team_join,
     validate_update,
     require_team,
+    validate_kick_member,
 )
 
 from src.dependencies import (
@@ -253,6 +254,7 @@ async def reject_team_join_request(
     operation_id="kick_team_member",
     dependencies=[
         require_team_permissions(team_permissions.member.kick),
+        Depends(validate_kick_member),
     ],
 )
 async def kick_team_member(

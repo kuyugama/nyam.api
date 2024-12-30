@@ -22,3 +22,7 @@ role_not_found = _define_error("role-not-found", "Role not found", 404)
 role_invalid = _define_error("role-invalid", "Role of invalid type specified", 400)
 
 join_already_requested = _define_error("join-already-requested", "Join already requested", 404)
+
+cannot_kick_highest_role = _define_error(
+    "kick-highest-role", "Can't kick member with the highest role", 403
+)

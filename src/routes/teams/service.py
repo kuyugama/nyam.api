@@ -4,9 +4,9 @@ from sqlalchemy import select, func, ScalarResult, Select, case
 
 from src import constants
 from src.util import merge_permissions
-from src.service import get_role_by_name
-from src.models import Team, User, TeamMember, Role, TeamJoinRequest
+from src.models import Team, User, TeamMember, TeamJoinRequest
 from .scheme import CreateTeamBody, UpdateTeamBody, UpdateTeamMemberBody
+from src.service import get_role_by_name, get_highest_role, get_lowest_role
 
 
 # region Team
@@ -47,9 +47,7 @@ async def create_team(session: AsyncSession, body: CreateTeamBody, owner: User) 
     )
 
     # Find role with higher weight for team member and set it for team owner
-    owner_role = await session.scalar(
-        select(Role).filter(Role.team_member_role).order_by(Role.weight.desc()).limit(1)
-    )
+    owner_role = await get_highest_role(session, team_member_role=True)
 
     owner = TeamMember(
         team=team,
@@ -193,9 +191,7 @@ async def list_joins(
 async def accept_join(session: AsyncSession, team: Team, join: TeamJoinRequest) -> TeamMember:
     join.status = constants.STATUS_TEAM_JOIN_ACCEPTED
 
-    role = await session.scalar(
-        select(Role).filter(Role.name == constants.ROLE_TEAM_MEMBER).limit(1)
-    )
+    role = await get_lowest_role(session, team_member_role=True)
 
     member = TeamMember(
         user=join.user,
@@ -278,7 +274,7 @@ async def verify_team(session: AsyncSession, team: Team, verifier: User) -> Team
 async def unverify_team(session: AsyncSession, team: Team):
     team.verified = False
     team.verifier_id = None
-    team.verifier = None
+    team.verifier = None  # type: ignore
 
     await session.commit()
 

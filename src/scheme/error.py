@@ -157,8 +157,15 @@ class APIError(fastapi.HTTPException):
     def model(self) -> type[ErrorModel]:
         return cast(type[ErrorModel], APIError[self.category, self.code])
 
-    def mark(self, func: FunctionType | Callable):
+    def mark(self, func: FunctionType | Callable = None):
         """Mark function as dependency that raises this error"""
+
+        # If used as:
+        # @error.mark()
+        # def func(): ...
+        if func is None:
+            return self.mark
+
         from src.util import has_errors
 
         has_errors(self)(func)

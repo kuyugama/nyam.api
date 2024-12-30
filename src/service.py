@@ -29,7 +29,7 @@ IMAGE_TYPE_TO_MODEL = {
 }
 
 
-def variant_options(select: Select) -> Select:
+def variant_options(query: Select) -> Select:
     member_load = joinedload(CompositionVariant.member).options(
         joinedload(TeamMember.user).options(joinedload(User.avatar), joinedload(User.role)),
         joinedload(TeamMember.role),
@@ -40,7 +40,7 @@ def variant_options(select: Select) -> Select:
     origin_load = joinedload(CompositionVariant.origin).options(
         joinedload(Composition.preview), selectinload(Composition.genres)
     )
-    return select.options(member_load, team_load, origin_load)
+    return query.options(member_load, team_load, origin_load)
 
 
 async def get_token(session: AsyncSession, body: str) -> Token | None:
@@ -58,15 +58,23 @@ async def drop_expired_tokens(session: AsyncSession, shift: timedelta = timedelt
     await session.commit()
 
 
-async def get_default_role(session: AsyncSession) -> Role | None:
+async def get_lowest_role(session: AsyncSession, team_member_role: bool = False) -> Role | None:
     return await session.scalar(
-        select(Role).filter_by(team_member_role=False).order_by(Role.weight.asc()).limit(1)
+        select(Role)
+        .filter_by(team_member_role=team_member_role)
+        .order_by(Role.weight.asc())
+        .limit(1)
     )
 
 
-async def get_team_default_role(session: AsyncSession) -> Role | None:
+async def get_highest_role(session: AsyncSession, team_member_role: bool = False) -> Role:
     return await session.scalar(
-        select(Role).filter_by(team_member_role=True).order_by(Role.weight.asc()).limit(1)
+        select(Role)
+        .filter(
+            Role.team_member_role == team_member_role,
+        )
+        .order_by(Role.weight.desc())
+        .limit(1)
     )
 
 

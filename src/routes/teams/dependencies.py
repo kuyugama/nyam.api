@@ -1,5 +1,5 @@
-from typing import Callable
 from functools import lru_cache
+from typing import Callable, Awaitable
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,8 @@ from src.models import Team, Token, TeamMember, TeamJoinRequest
 from src.service import get_team_member, get_team, get_role_by_name
 
 from .errors import (
+    cannot_kick_highest_role,
+    join_already_requested,
     provided_not_member,
     permission_denied,
     nothing_to_update,
@@ -21,8 +23,10 @@ from .errors import (
     role_invalid,
     not_member,
     not_found,
-    join_already_requested,
 )
+
+
+_TeamResolver = Callable[..., Team | int | None | Awaitable[Team | int | None]]
 
 
 @not_found.mark
@@ -36,7 +40,7 @@ async def require_team(team_id: int, session: AsyncSession = Depends(acquire_ses
 
 
 @lru_cache()
-def optional_team_member(resolve_team: Callable[[...], int | Team | None] = require_team):
+def optional_team_member(resolve_team: _TeamResolver = require_team):
 
     @not_found.mark
     async def dependency(
@@ -56,7 +60,7 @@ def optional_team_member(resolve_team: Callable[[...], int | Team | None] = requ
 
 
 @lru_cache
-def require_team_member(resolve_team: Callable[[...], int | Team | None]):
+def require_team_member(resolve_team: _TeamResolver):
 
     @not_found.mark
     @not_member.mark
@@ -72,9 +76,7 @@ def require_team_member(resolve_team: Callable[[...], int | Team | None]):
 
 
 @lru_cache
-def require_team_permissions(
-    *permissions, resolve_team: Callable[[...], int | Team | None] = require_team
-):
+def require_team_permissions(*permissions, resolve_team: _TeamResolver = require_team):
     denied = permission_denied(extra=dict(permissions=", ".join(map(str, permissions))))
 
     @permission_denied.mark
@@ -163,3 +165,13 @@ async def require_no_join_request(
     join = await service.get_join_by_user(session, team, token.owner)
     if join is not None:
         raise join_already_requested
+
+
+@cannot_kick_highest_role.mark
+async def validate_kick_member(
+    member: TeamMember = Depends(require_provided_team_member),
+    requester_member: TeamMember = Depends(optional_team_member()),
+):
+    # Cannot kick user with the highest role than requester user's role
+    if requester_member is not None and requester_member.role.weight <= member.role.weight:
+        raise cannot_kick_highest_role
