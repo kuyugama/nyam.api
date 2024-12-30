@@ -22,6 +22,7 @@ DEFAULT_ROLES = {
             team_permissions.team.update: True,
             team_permissions.member.manage_roles: True,
             team_permissions.member.manage_permissions: True,
+            team_permissions.member.kick: True,
             team_permissions.join.list: True,
             team_permissions.join.accept: True,
             team_permissions.join.reject: True,
@@ -79,6 +80,7 @@ DEFAULT_ROLES = {
         "title": "Користувач",
         "permissions": {
             permissions.user.own.update_info: True,
+            permissions.team.create: True,
         },
     },
     constants.ROLE_UNVERIFIED: {
@@ -127,9 +129,42 @@ async def create_default_roles(session: AsyncSession):
     """
 
     unique_names = set(DEFAULT_ROLES)
-    names_to_add = unique_names.difference(
-        (await session.scalars(select(Role.name).filter(Role.name.in_(DEFAULT_ROLES.keys())))).all()
-    )
+
+    roles = (await session.scalars(select(Role).filter(Role.name.in_(DEFAULT_ROLES.keys())))).all()
+
+    roles_names = []
+    names_to_update = {}
+
+    for role in roles:
+        roles_names.append(role.name)
+
+        origin = SORTED_ROLES[role.name]
+
+        role_meta = {
+            "role": role,
+            "diff": False
+        }
+
+        for permission, allowed in origin["permissions"].items():
+            # noinspection PyUnresolvedReferences
+            if role.permissions.get(str(permission)) is not allowed:
+                role.permissions = {str(name): allowed for name, allowed in origin["permissions"].items()}
+
+                role_meta["diff"] = True
+                break
+
+        if role.weight != origin["weight"]:
+            role.weight = origin["weight"]
+            role_meta["diff"] = True
+
+        if role.title != origin["title"]:
+            role.title = origin["title"]
+            role_meta["diff"] = True
+
+        if role_meta["diff"]:
+            names_to_update[role.name] = role_meta
+
+    names_to_add = unique_names.difference(roles_names)
 
     for name in names_to_add:
         role = Role(
@@ -140,9 +175,10 @@ async def create_default_roles(session: AsyncSession):
                 str(permission): allowed
                 for permission, allowed in SORTED_ROLES[name]["permissions"].items()
             },
+            default=True
         )
         session.add(role)
 
-    if names_to_add:
+    if names_to_add or names_to_update:
         await session.commit()
-        print("Added default roles:", *names_to_add)
+        print("Added {0}, Updated {1} roles".format(len(names_to_add), len(names_to_update)))
