@@ -1,3 +1,4 @@
+from .team import Team
 from .user import User
 from .role import Role
 from .token import Token
@@ -9,6 +10,8 @@ from .content import TextPage
 from .content import ImagePage
 from .image import UploadImage
 from .content import Composition
+from .team import TeamJoinRequest
+from .team_member import TeamMember
 from .content import CompositionVariant
 from .oauth_identity import OAuthIdentity
 from .thirdparty_token import ThirdpartyToken
@@ -17,9 +20,11 @@ from .thirdparty_token import ThirdpartyToken
 __all__ = [
     "CompositionVariant",
     "ThirdpartyToken",
+    "TeamJoinRequest",
     "OAuthIdentity",
     "Composition",
     "UploadImage",
+    "TeamMember",
     "ImagePage",
     "TextPage",
     "BasePage",
@@ -29,4 +34,5 @@ __all__ = [
     "Token",
     "Role",
     "User",
+    "Team",
 ]

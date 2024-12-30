@@ -11,6 +11,7 @@ from .base import Base
 from .role import Role
 from src import constants
 from .image import UploadImage
+from .mixins import PermissionMixin
 from src.util import now, merge_permissions
 
 __all__ = ["User"]
@@ -23,7 +24,7 @@ def _user_next_offline():
     return now() + timedelta(minutes=constants.USER_ONLINE_TTL)
 
 
-class User(Base):
+class User(Base, PermissionMixin):
     # Sign-in columns
     # Email can be null only if user logged in by oauth
     email: orm.Mapped[str] = orm.mapped_column(index=True, nullable=True)
@@ -47,17 +48,6 @@ class User(Base):
 
     role_id = orm.mapped_column(ForeignKey(Role.id, ondelete="CASCADE"))
     role: orm.Mapped[Role] = orm.relationship(Role, foreign_keys=[role_id])
-
-    # User individual permissions
-    # Keys are actual permission names
-    local_permissions: orm.Mapped[dict[str, bool]] = orm.mapped_column(
-        MutableDict.as_mutable(JSONB), default={}  # type: ignore
-    )
-
-    @property
-    def permissions(self):
-        """Combine user's role and own permissions."""
-        return merge_permissions(self.role.permissions, self.local_permissions)
 
     @property
     def online(self):

@@ -1,19 +1,19 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, UploadFile
 
+from src.permissions import team_permissions
 from . import service
 from src import scheme
-from src.models import Chapter, Volume
-from src.permissions import permissions
 from .scheme import PublishTextPageBody
 from src.database import acquire_session
+from src.models import Chapter, Volume, TeamMember
 from src.util import get_offset_and_limit, paginated_response
 
 from .dependencies import (
     validate_image_page_file,
     validate_image_page_index,
     validate_publish_text_page,
-    validate_publish_image_permissions,
+    require_team_id,
 )
 
 from src.dependencies import (
@@ -21,9 +21,8 @@ from src.dependencies import (
     require_page,
     require_volume,
     require_chapter,
-    require_permissions,
 )
-
+from ...teams.dependencies import require_team_member, require_team_permissions
 
 router = APIRouter(prefix="/chapter")
 
@@ -62,16 +61,16 @@ async def get_chapter(chapter: Chapter = Depends(require_chapter)):
     operation_id="publish_text_page",
     response_model=scheme.TextPage,
     dependencies=[
-        Depends(validate_publish_image_permissions),
-        require_permissions(permissions.page.text.create),
+        require_team_permissions(team_permissions.page.text.create, resolve_team=require_team_id)
     ],
 )
 async def publish_text_page(
     chapter: Chapter = Depends(require_chapter),
     session: AsyncSession = Depends(acquire_session),
     body: PublishTextPageBody = Depends(validate_publish_text_page),
+    team_member: TeamMember = Depends(require_team_member(require_team_id)),
 ):
-    return await service.create_text_page(session, chapter, body)
+    return await service.create_text_page(session, chapter, body, team_member)
 
 
 @router.post(
@@ -80,8 +79,7 @@ async def publish_text_page(
     operation_id="publish_image_page",
     response_model=scheme.ImagePage,
     dependencies=[
-        Depends(validate_publish_image_permissions),
-        require_permissions(permissions.page.image.create),
+        require_team_permissions(team_permissions.page.image.create, resolve_team=require_team_id),
     ],
 )
 async def publish_image_page(
@@ -90,5 +88,6 @@ async def publish_image_page(
     index: int = Depends(validate_image_page_index),
     session: AsyncSession = Depends(acquire_session),
     image: UploadFile = Depends(validate_image_page_file),
+    team_member: TeamMember = Depends(require_team_member(require_team_id)),
 ):
-    return await service.create_image_page(session, chapter, index, image, mime)
+    return await service.create_image_page(session, chapter, index, image, mime, team_member)

@@ -9,7 +9,6 @@ async def create_role(
     master_key: str,
     name: str,
     title: str,
-    default: bool = False,
     permissions: dict[str, bool] = None,
     base_role: str = None,
     weight: int | None = None,
@@ -27,7 +26,6 @@ async def create_role(
             "name": name,
             "title": title,
             "weight": weight,
-            "default": default,
             "permissions": permissions,
             "base_role": base_role,
         },
@@ -43,7 +41,6 @@ async def update_role(
     master_key: str,
     name: str,
     title: str | None = None,
-    default: bool = False,
     permissions: dict[str, bool] = None,
     merge_permissions: bool = False,
 ):
@@ -54,7 +51,6 @@ async def update_role(
         f"/roles/{name}",
         headers={"Master-Key": master_key},
         json={
-            "default": default,
             "title": title,
             "permissions": permissions,
             "merge_permissions": merge_permissions,

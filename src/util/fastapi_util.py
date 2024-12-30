@@ -1,11 +1,13 @@
 import typing
 from types import FunctionType
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from fastapi.utils import create_model_field
 from fastapi.dependencies.models import Dependant
+
+from src.util.permissions_util import Permission
 
 if typing.TYPE_CHECKING:
     from src.scheme import APIError
@@ -73,19 +75,48 @@ def setup_route_errors(app: FastAPI):
                     route.response_fields.setdefault(code, field)
 
 
+def _get_dependant_permissions(dependant: Dependant) -> set[str]:
+    permissions: set[str] = set()
+
+    for dependency in dependant.dependencies:
+        if hasattr(dependency.call, "permissions"):
+            permissions.update(map(str, dependency.call.permissions))
+
+        permissions.update(_get_dependant_permissions(dependency))
+
+    return permissions
+
+
 def render_route_permissions(app: FastAPI):
     for route in app.routes:
         if not isinstance(route, APIRoute):
             continue
 
+        permissions = set()
         for depends in route.dependencies:
             dependency = depends.dependency
             if not hasattr(dependency, "permissions"):
                 continue
 
-            permissions = "## 🛡Необхідні права: ️" + " ".join(map(str, dependency.permissions))
+            permissions.update(map(str, dependency.permissions))
 
-            route.description = (
-                route.description + "\n\n" + permissions if route.description else permissions
-            )
-            break
+        permissions.update(_get_dependant_permissions(route.dependant))
+
+        permissions = "## 🛡Необхідні права: ️" + " ".join(permissions)
+
+        route.description = (
+            route.description + "\n\n" + permissions if route.description else permissions
+        )
+
+
+def requires_permissions(permissions: Sequence[str | Permission | tuple[str, ...]]):
+    """
+    Set dependency required permissions
+    """
+
+    def decorator(func):
+        func.permissions = permissions
+
+        return func
+
+    return decorator

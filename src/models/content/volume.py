@@ -2,11 +2,12 @@ from sqlalchemy import ForeignKey, event, Connection
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from ..base import Base
+from ..mixins import OwnedByTeamMixin
 from .composition import CompositionVariant
 from src.util import update_within_flush_event
 
 
-class Volume(Base):
+class Volume(Base, OwnedByTeamMixin):
     variant_id = mapped_column(ForeignKey(CompositionVariant.id, ondelete="CASCADE"))
     variant: Mapped[CompositionVariant] = relationship(foreign_keys=[variant_id])
 

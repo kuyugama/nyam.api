@@ -1,7 +1,8 @@
-from sqlalchemy import Select, select, func, ScalarResult
+from sqlalchemy import Select, select, ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Volume, Chapter
+from .scheme import CreateChapterBody
+from src.models import Volume, Chapter, TeamMember
 
 
 def volume_filters(query: Select, variant_id: int):
@@ -23,11 +24,15 @@ async def list_volumes(
     )
 
 
-async def create_chapter(session: AsyncSession, volume: Volume, body):
+async def create_chapter(
+    session: AsyncSession, volume: Volume, body: CreateChapterBody, team_member: TeamMember
+):
     chapter = Chapter(
         volume=volume,
         index=body.index,
         title=body.title,
+        team_id=volume.team_id,
+        member_id=team_member.id,
     )
 
     session.add(chapter)

@@ -26,6 +26,7 @@ from .image_util import filter_image_size
 from .string_util import email_to_nickname
 from .fastapi_util import setup_route_errors
 from .datetime_util import from_utc_timestamp
+from .fastapi_util import requires_permissions
 from .fastapi_util import route_has_dependency
 from .permissions_util import check_permissions
 from .permissions_util import merge_permissions
@@ -35,9 +36,9 @@ from .sqlalchemy_util import update_within_flush_event
 
 __all__ = [
     "now",
+    "Cache",
     "lower",
     "slugify",
-    "UseCache",
     "file_size",
     "has_errors",
     "delete_obj",
@@ -60,6 +61,7 @@ __all__ = [
     "from_utc_timestamp",
     "setup_route_errors",
     "paginated_response",
+    "requires_permissions",
     "route_has_dependency",
     "get_offset_and_limit",
     "render_route_permissions",
@@ -90,9 +92,17 @@ def paginated_response(
 T = typing.TypeVar("T")
 
 
-class UseCache(typing.Protocol):
+class Cache(typing.Protocol):
     @staticmethod
-    async def __call__(cache_key: tuple[typing.Any, ...], coro: typing.Awaitable[T]) -> T: ...
+    async def __call__(
+        cache_key: tuple[typing.Any, ...],
+        coro: (
+            typing.Awaitable[T]
+            | typing.Callable[..., typing.Awaitable[T] | typing.Coroutine[..., ..., T]]
+        ),
+        *args,
+        **kwargs
+    ) -> T: ...
 
 
 class PermissionChecker(typing.Protocol):

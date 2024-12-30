@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from functools import lru_cache
 
@@ -6,10 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Header, Query, Depends, BackgroundTasks, params, Request, UploadFile, FastAPI
 
 from config import settings
-from .util import cache_key_hash
-from . import service, scheme, util
+from . import service, scheme, util, errors
+from .util import cache_key_hash, requires_permissions
 from src.database import session_holder, acquire_session
-from .models import Token, CompositionVariant, Volume, Chapter
+from .models import Token, CompositionVariant, Volume, Chapter, User
 
 define_error = scheme.define_error_category("token")
 token_required = define_error("required", "Token required", 401)
@@ -55,7 +56,7 @@ async def _use_token(token: str):
         await session.commit()
 
 
-@token_expired.mark
+@token_expired.mark()
 async def optional_token(
     background: BackgroundTasks,
     token_body: str | None = Header(
@@ -80,7 +81,7 @@ async def optional_token(
             background.add_task(_use_token, token_body)
 
 
-@token_required.mark
+@token_required.mark()
 async def require_token(
     token: Token | None = Depends(optional_token),
 ):
@@ -96,7 +97,7 @@ def master_grant(master_key: str | None = Header(None, description="Master key")
     return master_key == settings.service.master_key
 
 
-@master_required.mark
+@master_required.mark()
 def master_lock(master_granted: bool = Depends(master_grant)):
     """Prevent access to endpoint for users that doesn't provide master key"""
     if not master_granted:
@@ -140,7 +141,8 @@ def require_permissions(*permissions: str) -> params.Depends:
         require_permissions("user.own.update-info | user.update_info")
     """
 
-    @permission_denied.mark
+    @permission_denied.mark()
+    @requires_permissions(permissions)
     def dependency(
         master_granted: bool = Depends(master_grant),
         token: Token | None = Depends(optional_token),
@@ -148,12 +150,10 @@ def require_permissions(*permissions: str) -> params.Depends:
         if not check_permissions(master_granted, token, *permissions):
             raise permission_denied(extra=dict(permissions=", ".join(map(str, permissions))))
 
-    setattr(dependency, "permissions", permissions)
-
     return Depends(dependency)
 
 
-@permission_denied.mark
+@permission_denied.mark()
 def interactive_require_permissions(
     master_granted: bool = Depends(master_grant), token: Token | None = Depends(optional_token)
 ):
@@ -193,7 +193,7 @@ def require_page(page: int = Query(1, ge=1, description="№ Сторінки"))
     return page
 
 
-@_variant_not_found.mark
+@_variant_not_found.mark()
 async def require_composition_variant(
     variant_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> CompositionVariant:
@@ -204,7 +204,7 @@ async def require_composition_variant(
     return variant
 
 
-@_volume_not_found.mark
+@_volume_not_found.mark()
 async def require_volume(
     volume_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> Volume:
@@ -215,7 +215,7 @@ async def require_volume(
     return volume
 
 
-@_chapter_not_found.mark
+@_chapter_not_found.mark()
 async def require_chapter(
     chapter_id: int, session: AsyncSession = Depends(acquire_session)
 ) -> Chapter:
@@ -226,7 +226,7 @@ async def require_chapter(
     return chapter
 
 
-@_page_not_found.mark
+@_page_not_found.mark()
 async def require_content_page(page_id: int, session: AsyncSession = Depends(acquire_session)):
     page = await service.get_page(session, page_id)
     if page is None:
@@ -240,12 +240,12 @@ def file_mime(file: UploadFile) -> str:
 
 
 @lru_cache
-def require_use_cache(key: str):
+def require_cache(key: str):
     """
     Dependency generates function to save result of coroutines using cache key
 
     :param key: cache context key (can be used to drop cache)
-    :return: (tuple<Any, ...>, Awaitable<T>) -> Awaitable<T>
+    :return: (tuple<Any, ...>, Awaitable<T> | Callable, *args, **kwargs) -> Awaitable<T>
     """
 
     def dependency(request: Request):
@@ -259,12 +259,15 @@ def require_use_cache(key: str):
 
         cache = app.user_cache.setdefault(key, {})
 
-        async def use_cache(cache_key, coro):
+        async def use_cache(cache_key, coro, *args, **kwargs):
             nonlocal cache
             key = cache_key_hash(cache_key)
 
             if key in cache:
                 return cache[key]
+
+            if not inspect.iscoroutine(coro):
+                coro = coro(*args, **kwargs)
 
             return cache.setdefault(key, await coro)
 
@@ -295,3 +298,12 @@ def require_drop_cache(key: str):
             cache.clear()
 
     return Depends(dependency)
+
+
+@errors.user_not_found.mark
+async def require_user(nickname: str, session: AsyncSession = Depends(acquire_session)) -> User:
+    user = await service.get_user_by_nickname(session, nickname)
+    if user is None:
+        raise errors.user_not_found
+
+    return user

@@ -2,7 +2,6 @@ from fastapi import Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.scheme import APIError
-from src.util import has_errors
 from src import constants, scheme
 from src.models import Token, User
 from src.permissions import permissions
@@ -51,7 +50,8 @@ avatar_too_big = define_error(
 )
 
 
-@has_errors(empty_update, nothing_to_update)
+@empty_update.mark()
+@nothing_to_update.mark()
 async def validate_update_user(
     body: UpdateUserBody,
     token: Token | User = Depends(require_token),
@@ -89,7 +89,8 @@ async def validate_update_user(
     return body
 
 
-@has_errors(invalid_avatar_mime, avatar_too_big)
+@invalid_avatar_mime.mark()
+@avatar_too_big.mark()
 def validate_avatar(
     file: UploadFile,
     mime: str = Depends(file_mime),
@@ -103,7 +104,7 @@ def validate_avatar(
     return file.file
 
 
-@role_not_found.mark
+@role_not_found.mark()
 async def validate_role(role_name: str, session: AsyncSession = Depends(acquire_session)):
     role = await get_role_by_name(session, role_name)
     if not role:
@@ -112,7 +113,7 @@ async def validate_role(role_name: str, session: AsyncSession = Depends(acquire_
     return role
 
 
-@user_not_found.mark
+@user_not_found.mark()
 async def validate_user(nickname: str, session: AsyncSession = Depends(acquire_session)):
     user = await get_user_by_nickname(session, nickname)
     if not user:
@@ -121,7 +122,8 @@ async def validate_user(nickname: str, session: AsyncSession = Depends(acquire_s
     return user
 
 
-@has_errors(empty_update, nothing_to_update)
+@empty_update.mark()
+@nothing_to_update.mark()
 async def validate_update_other_user(
     body: UpdateOtherUserBody,
     user: User = Depends(validate_user),

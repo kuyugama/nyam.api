@@ -13,7 +13,7 @@ from .scheme import (
     SignInEmailBody,
     SignInNicknameBody,
 )
-from src.service import get_default_role
+from src.service import get_lowest_role
 
 define_error = scheme.define_error_category("auth")
 default_role_not_exist = scheme.define_error(
@@ -32,7 +32,7 @@ password_incorrect = define_error("password-incorrect", "Password incorrect", 40
 async def validate_signup(
     body: SignUpBody, session: AsyncSession = Depends(acquire_session)
 ) -> SignUpBody:
-    if await get_default_role(session) is None:
+    if await get_lowest_role(session) is None:
         raise default_role_not_exist
 
     if await service.get_user_by_email(session, body.email) is not None:

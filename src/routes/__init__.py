@@ -18,10 +18,12 @@ async def get_bot(code: str):
 
 from .auth import router as auth_router
 from .users import router as user_router
+from .teams import router as teams_router
 from .roles import router as roles_router
 from .content import router as content_router
 
 router.include_router(content_router)
 router.include_router(roles_router)
+router.include_router(teams_router)
 router.include_router(auth_router)
 router.include_router(user_router)

@@ -12,6 +12,7 @@ class CreateCompositionVariantBody(SchemeModel):
     synopsis: str | None = Field(
         None, min_length=3, max_length=4096, description="Опис варіанту твору (необов'язково)"
     )
+    team_id: int = Field(description="Від імені якої команди створити варіант твору (обов'язково)")
 
 
 class CompositionListBody(SchemeModel):

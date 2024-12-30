@@ -55,6 +55,7 @@ async def list_compositions(
 async def publish_composition_variant(
     client: TestClient,
     token: str,
+    team_id: int,
     slug: str,
     title: str,
     synopsis: str,
@@ -64,6 +65,7 @@ async def publish_composition_variant(
         json={
             "title": title,
             "synopsis": synopsis,
+            "team_id": team_id,
         },
         headers={"Token": token},
     )

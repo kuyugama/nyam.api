@@ -1,7 +1,8 @@
-from . import users, auth, roles, content
+from . import auth, teams, users, roles, content
 
 __all__ = [
     "auth",
+    "teams",
     "users",
     "roles",
     "content",

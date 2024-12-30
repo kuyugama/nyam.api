@@ -6,6 +6,7 @@ from src.models import Composition
 from src.database import acquire_session
 from ..dependencies import require_provider
 from src.scheme import define_error_category
+from .scheme import CreateCompositionVariantBody
 from src.content_providers import BaseContentProvider
 
 define_error = define_error_category("content/composition")
@@ -16,8 +17,8 @@ composition_already_exists = define_error("already-exists", "Composition already
 composition_not_found = define_error("not-found", "Composition not found", 404)
 
 
-@provider_composition_not_found.mark
-@composition_already_exists.mark
+@provider_composition_not_found.mark()
+@composition_already_exists.mark()
 async def require_provider_composition(
     provider_id: str,
     provider: BaseContentProvider = Depends(require_provider),
@@ -34,7 +35,7 @@ async def require_provider_composition(
     return provider_composition
 
 
-@composition_not_found.mark
+@composition_not_found.mark()
 async def require_composition(
     slug: str,
     session: AsyncSession = Depends(acquire_session),
@@ -44,3 +45,7 @@ async def require_composition(
         raise composition_not_found
 
     return composition
+
+
+async def require_body_team_id(body: CreateCompositionVariantBody) -> int:
+    return body.team_id

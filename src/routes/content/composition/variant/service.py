@@ -1,30 +1,15 @@
-from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import Select, select, func, ScalarResult
+from sqlalchemy import Select, select, ScalarResult
 
 from .scheme import CreateVolumeBody
-from src.models import CompositionVariant, Composition, User, Volume
+from src.service import variant_options
+from src.models import CompositionVariant, Composition, Volume, TeamMember
 
 
 def variants_filter(query: Select, slug: str) -> Select:
     return query.filter(
         CompositionVariant.origin_id == Composition.id,
         Composition.slug == slug,
-    )
-
-
-def variants_options(query: Select) -> Select:
-    author_load = joinedload(CompositionVariant.author).options(
-        joinedload(User.avatar), joinedload(User.role)
-    )
-
-    origin_load = joinedload(CompositionVariant.origin).options(
-        joinedload(Composition.preview), selectinload(Composition.genres)
-    )
-
-    return query.options(
-        author_load,
-        origin_load,
     )
 
 
@@ -36,20 +21,25 @@ async def list_variants(
     session: AsyncSession, slug: str, offset: int, limit: int
 ) -> ScalarResult[CompositionVariant]:
     return await session.scalars(
-        variants_options(
+        variant_options(
             variants_filter(select(CompositionVariant).limit(limit).offset(offset), slug)
         )
     )
 
 
 async def create_volume(
-    session: AsyncSession, variant: CompositionVariant, body: CreateVolumeBody
+    session: AsyncSession,
+    variant: CompositionVariant,
+    body: CreateVolumeBody,
+    team_member: TeamMember,
 ) -> Volume:
 
     volume = Volume(
         variant=variant,
         index=body.index,
         title=body.title,
+        team_id=variant.team_id,
+        member_id=team_member.id,
     )
 
     session.add(volume)

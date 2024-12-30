@@ -9,7 +9,7 @@ from .scheme import SignUpBody
 from src import constants
 from src.models import User, Token
 from src.util import secure_hash, now
-from src.service import get_default_role, get_user_by_nickname
+from src.service import get_lowest_role, get_user_by_nickname
 
 __all__ = [
     "create_user",
@@ -24,7 +24,7 @@ async def create_user(session: AsyncSession, body: SignUpBody) -> User:
         email=body.email,
         nickname=body.nickname,
         password_hash=secure_hash(body.password),
-        role=await get_default_role(session),
+        role=await get_lowest_role(session),
     )
     session.add(user)
     await session.commit()

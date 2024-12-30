@@ -3,21 +3,21 @@ from tests import requests
 from tests.helpers import assert_contain
 
 
-async def test_no_origin(client, token_admin):
+async def test_no_origin(client, token_translator, member_owner, team):
     response = await requests.content.publish_composition_variant(
-        client, token_admin.body, "slug", "sometitle", "somesynospis"
+        client, token_translator.body, team.id, "slug", "sometitle", "somesynospis"
     )
     print(response.json())
     assert response.status_code == 404
     assert_contain(response.json(), category="content/composition", code="not-found")
 
 
-async def test_normal(client, token_admin, composition):
+async def test_normal(client, token_translator, member_owner, team, composition):
     title = "sometitle"
     synopsis = "somesynopsis"
 
     response = await requests.content.publish_composition_variant(
-        client, token_admin.body, composition.slug, title, synopsis
+        client, token_translator.body, team.id, composition.slug, title, synopsis
     )
     print(response.json())
     assert response.status_code == 200

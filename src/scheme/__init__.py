@@ -1,5 +1,6 @@
 from pydantic import Field
 
+from .team import Team
 from .user import User
 from .role import Role
 from .token import Token
@@ -17,16 +18,19 @@ from .model import SchemeModel
 from .image import UploadImage
 from .error import define_error
 from .pagination import Paginated
+from .team_member import TeamMember
 from .providers import OAuthProvider
 from .composition import Composition
 from .providers import ContentProvider
 from .error import ValidationErrorModel
 from .error import define_error_category
 from .composition import CompositionVariant
+from .team_member import TeamMemberWithoutTeam
 
 
 __all__ = [
     "Bot",
+    "Team",
     "User",
     "Role",
     "Token",
@@ -39,6 +43,7 @@ __all__ = [
     "ImagePage",
     "FullToken",
     "Paginated",
+    "TeamMember",
     "ClientInfo",
     "ErrorModel",
     "SchemeModel",
@@ -49,6 +54,7 @@ __all__ = [
     "ContentProvider",
     "CompositionVariant",
     "ValidationErrorModel",
+    "TeamMemberWithoutTeam",
     "define_error_category",
 ]
 

@@ -52,3 +52,19 @@ STATUS_COMPOSITION_COMPLETED = "completed"
 STATUS_COMPOSITION_VARIANT_PENDING = "pending"
 STATUS_COMPOSITION_VARIANT_ABANDONED = "abandoned"
 STATUS_COMPOSITION_VARIANT_COMPLETED = "completed"
+
+# Team join request status
+STATUS_TEAM_JOIN_PENDING = "pending"
+STATUS_TEAM_JOIN_ACCEPTED = "accepted"
+STATUS_TEAM_JOIN_REJECTED = "rejected"
+
+
+# Default role names
+ROLE_TEAM_OWNER = "TeamOwner"
+ROLE_TEAM_MEMBER = "TeamMember"
+ROLE_ROOT = "Root"
+ROLE_ADMINISTRATOR = "Administrator"
+ROLE_MODERATOR = "Moderator"
+ROLE_PUBLISHER = "Publisher"
+ROLE_USER = "User"
+ROLE_UNVERIFIED = "Unverified"
