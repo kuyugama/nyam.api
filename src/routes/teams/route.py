@@ -288,7 +288,7 @@ async def update_team_member(
     operation_id="leave_team",
 )
 async def leave_team(
-    member: TeamMember = Depends(require_team_member),
+    member: TeamMember = Depends(require_team_member()),
     session: AsyncSession = Depends(acquire_session),
 ):
     return await service.kick_team_member(session, member)

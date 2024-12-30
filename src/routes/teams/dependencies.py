@@ -30,7 +30,7 @@ _TeamResolver = Callable[..., Team | int | None | Awaitable[Team | int | None]]
 
 
 @not_found.mark()
-async def require_team(team_id: int, session: AsyncSession = Depends(acquire_session)):
+async def require_team(team_id: int, session: AsyncSession = Depends(acquire_session)) -> Team:
     team = await get_team(session, team_id)
 
     if team is None:
@@ -60,7 +60,7 @@ def optional_team_member(resolve_team: _TeamResolver = require_team):
 
 
 @lru_cache
-def require_team_member(resolve_team: _TeamResolver):
+def require_team_member(resolve_team: _TeamResolver = require_team):
 
     @not_found.mark()
     @not_member.mark()
