@@ -9,14 +9,14 @@ ENV POETRY_NO_INTERACTION=1 \
     VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
-RUN pip install poetry
+RUN pip install poetry -qqq
 
 WORKDIR /app
 
 COPY ./pyproject.toml /app/
 
-RUN poetry install --no-root && rm -rf $POETRY_CACHE_DIR
+RUN poetry install --no-root --no-interaction --quiet && rm -rf $POETRY_CACHE_DIR
 
 COPY . /app/
 
-CMD alembic upgrade head && fastapi run --port=8000
+CMD fastapi run --port=8000

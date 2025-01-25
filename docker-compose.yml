@@ -1,4 +1,4 @@
-version: "3.8"
+
 
 volumes:
   redis-data:
@@ -6,22 +6,21 @@ volumes:
 
 services:
   redis:
-    container_name: redis
+    container_name: "redis.nyam"
     image: redis:7
-    ports:
-      - "6379:6379"
     volumes:
       - redis-data:/data
 
     restart: always
 
+    healthcheck:
+      test: redis-cli --raw ping | grep -q "PONG"
+      interval: "1s"
+      retries: 5
+
   postgres:
-    container_name: postgres
-
+    container_name: "postgres.nyam"
     image: postgres:latest
-
-    ports:
-      - "5432:5432"
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -33,9 +32,42 @@ services:
 
     restart: always
 
-  api:
-    container_name: nyam-api
+    healthcheck:
+      test: pg_isready --dbname=${POSTGRES_DB} --user=${POSTGRES_USER}
 
+      interval: "1s"
+      retries: 5
+
+  migrations:
+    container_name: "migrations.nyam"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    command: "alembic upgrade head"
+
+  dramatiq:
+    container_name: "dramatiq.nyam"
+    depends_on: &redis_and_migrations
+      redis:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    command: "dramatiq redis tasks"
+
+    restart: always
+
+  api:
+    container_name: "api.nyam"
     build:
       context: .
       dockerfile: Dockerfile
@@ -45,18 +77,4 @@ services:
 
     restart: always
 
-    depends_on:
-      - redis
-      - postgres
-
-  dramatiq:
-    container_name: dramatiq
-
-    build:
-      context: .
-      dockerfile: dramatiq.Dockerfile
-
-    restart: always
-
-    depends_on:
-      - redis
+    depends_on: *redis_and_migrations
